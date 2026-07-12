@@ -7,11 +7,11 @@ Diong is a commercial personal-development social web application.
 Diong helps users:
 
 - read structured daily Prime Protocols;
-- take small actions toward their goals;
-- create and track goals;
+- complete practical Action Triggers;
+- create and track personal goals;
 - build habits and consistency;
 - write private journal entries;
-- measure streaks and progress;
+- track streaks and progress;
 - share selected progress with a supportive community;
 - access planners, trackers, short guides and eBooks;
 - receive personalised AI-supported content in a later release.
@@ -31,37 +31,32 @@ Diong helps users:
 
 ## Development Rules
 
-1. Inspect the existing project before editing files.
-2. Create a plan before implementing any substantial feature.
-3. Work on only the requested phase.
-4. Do not build unrequested future features.
-5. Do not introduce mock APIs when a simple local data structure is sufficient.
-6. Never expose secrets or service-role keys in browser code.
-7. Use TypeScript strict typing.
-8. Avoid the `any` type unless clearly justified.
-9. Use reusable components rather than oversized page files.
-10. Prefer Server Components unless client-side interactivity is required.
-11. Add `"use client"` only where necessary.
-12. Use semantic and accessible HTML.
-13. Build mobile-first responsive interfaces.
-14. Avoid unsupported medical, neurological or scientific claims.
-15. Do not claim that Diong rewires, reprograms or guarantees changes to the brain.
-16. Describe Prime Protocols as tools for attention, reflection, motivation, habits and purposeful action.
-17. Do not create fake testimonials, fake reviews, fake user totals or fake success statistics.
-18. Run lint and production build after meaningful implementation work.
-19. Fix errors before declaring a task complete.
-20. Explain the files changed and any manual actions still required.
-21. Do not delete working code without explaining why.
-22. Preserve existing functionality unless the requested feature requires a deliberate change.
-23. Keep commits and feature phases small enough to review.
-24. Do not install unnecessary dependencies.
-25. Never modify SiteTrack or any project outside this Diong repository.
+1. Inspect the existing project before editing.
+2. Create a brief plan before implementing substantial work.
+3. Work only on the requested phase.
+4. Do not add unrequested future features.
+5. Use strict TypeScript typing.
+6. Avoid the `any` type unless clearly justified.
+7. Use reusable components instead of oversized page files.
+8. Prefer Server Components unless browser interactivity is required.
+9. Add `"use client"` only when necessary.
+10. Use semantic and accessible HTML.
+11. Build mobile-first responsive interfaces.
+12. Do not expose secrets or Supabase service-role keys in browser code.
+13. Do not make medical, neurological or guaranteed-success claims.
+14. Describe Prime Protocols as tools for attention, reflection, motivation, habits and purposeful action.
+15. Do not create fake testimonials, reviews, user numbers or success statistics.
+16. Run lint and production build after meaningful implementation work.
+17. Fix errors caused by the work before declaring completion.
+18. Explain every file created or changed.
+19. Do not install unnecessary dependencies.
+20. Do not modify SiteTrack or any project outside this Diong repository.
 
 ## Product Identity
 
 Name: Diong
 
-Primary tagline: Prime your mind. Act on your goals. Become more.
+Tagline: Prime your mind. Act on your goals. Become more.
 
 Brand personality:
 
@@ -74,18 +69,18 @@ Brand personality:
 - inclusive;
 - action-oriented.
 
-Avoid creating an interface that feels like:
+Avoid making Diong look like:
 
 - a generic quote website;
-- a medical treatment product;
-- a loud motivational poster;
-- a clone of Instagram;
-- a cryptocurrency project;
-- a mystical or supernatural product.
+- a medical treatment platform;
+- a loud motivational-poster website;
+- an Instagram clone;
+- a cryptocurrency product;
+- a mystical or supernatural service.
 
 ## Prime Protocol Structure
 
-Every Prime Protocol can contain:
+Every Prime Protocol may contain:
 
 - title;
 - category;
