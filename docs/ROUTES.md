@@ -11,15 +11,17 @@
 | `/reset-password` | Public | Set a new password from a reset link. | Enter new password, submit. | Button pending state. | Not applicable. | Expired link, invalid token, or weak password. |
 | `/privacy` | Public | Explain privacy practices and data handling. | Read policy. | Text placeholders. | Not applicable. | Page unavailable message. |
 | `/terms` | Public | Explain terms of use. | Read terms. | Text placeholders. | Not applicable. | Page unavailable message. |
-| `/home` | Protected | Authenticated dashboard for daily focus. | Open Daily Prime, view habits/goals snapshot, navigate to core areas. | Dashboard skeleton. | New user prompt after onboarding. | Unable to load dashboard data. |
-| `/onboarding` | Protected | Collect initial profile and goal interests. | Select interests, set username/display name, complete setup. | Form loading state. | Start onboarding prompt. | Username unavailable or save failed. |
+| `/home` | Protected, onboarding required | Personalised dashboard shell. | View profile identity and interests, open settings, log out. | Server page load. | Interest fallback if selections are unavailable. | Unable to load profile data. |
+| `/onboarding` | Protected, incomplete users only | Collect identity and 1–5 interests in three stages. | Check username, select interests, confirm and save atomically. | Pending availability/save states. | Start onboarding prompt. | Accessible field and form errors. |
 | `/daily-prime` | Protected | Show today's assigned Prime Protocol. | Read protocol, complete Action Trigger, open journal. | Protocol card skeleton. | No protocol assigned today. | Unable to load or complete protocol. |
 | `/goals` | Protected | Manage personal goals. | Create, edit, complete, archive, delete goals; add updates. | Goal list skeleton. | No goals yet. | Unable to save or load goals. |
 | `/habits` | Protected | Track habits and streaks. | Create habits, log completions, view streaks. | Habit list skeleton. | No habits yet. | Unable to save habit or completion log. |
 | `/journal` | Protected | Write and manage private journal entries. | Create, edit, delete, view entries. | Entry list/editor skeleton. | No journal entries yet. | Unable to save or load journal entry. |
 | `/community` | Protected | Basic social feed. | Create posts, like, comment, follow from profiles. | Feed skeleton. | No posts to show. | Unable to load feed or save interaction. |
 | `/notifications` | Protected | Show basic notifications. | View notifications, mark as read. | Notification list skeleton. | No notifications yet. | Unable to load or update notifications. |
-| `/profile/[username]` | Protected | Show a user's public profile and posts. | View profile, follow/unfollow, interact with posts. | Profile skeleton. | User has no public posts. | User not found or profile unavailable. |
+| `/profile/[username]` | Protected, onboarding required | Show an authenticated-visible public profile. | View display name, username, optional bio and interests. | Server page load. | Neutral future-activity message. | Unknown/incomplete username returns not found. |
 | `/settings` | Protected | Manage account and profile settings. | Update profile, preferences, request password reset, sign out. | Form loading state. | Minimal account state. | Save failed or auth action failed. |
+| `/settings/profile` | Protected, onboarding required | Update the owner's public profile. | Update username, display name and bio. | Button pending state. | Existing profile values. | Field and form save errors. |
+| `/auth/callback` | Public auth route | Exchange a Supabase PKCE code for a cookie session. | Continue to a validated local destination. | Redirect. | Not applicable. | Redirect to login with callback error. |
 
-Protected routes must redirect unauthenticated users to `/login`. Users who have not completed onboarding should be sent to `/onboarding` before normal protected app routes.
+Protected routes redirect unauthenticated users to `/login`. Authoritative checks run in server pages/layouts: incomplete users go to `/onboarding`, `/onboarding` never redirects to itself, and completed users are redirected from onboarding to `/home`. Proxy session refresh does not replace server authorization checks. Auth callback and password-recovery routes remain public.

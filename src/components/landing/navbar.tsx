@@ -32,13 +32,13 @@ export function Navbar() {
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <a
-            href="#"
+            href="/login"
             className="hidden rounded-full px-4 py-2 text-sm font-semibold text-[#3f4a42] transition hover:bg-white/70 sm:inline-flex"
           >
             Log in
           </a>
           <a
-            href="#start"
+            href="/register"
             className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#1d2420] px-5 text-sm font-semibold text-white shadow-sm shadow-[#1d2420]/20 transition hover:bg-[#2f3a34] focus:outline-none focus:ring-2 focus:ring-[#1d2420] focus:ring-offset-2 focus:ring-offset-[#f7f4ee]"
           >
             Start free

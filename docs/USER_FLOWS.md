@@ -21,11 +21,20 @@
 ## Onboarding
 
 1. Authenticated user opens `/onboarding`.
-2. User chooses goal interests.
-3. User sets display name and username.
-4. System validates username availability and required fields.
-5. System saves onboarding state.
-6. User is redirected to `/home`.
+2. Completed users are redirected to `/home`; incomplete users see the three-stage flow.
+3. User sets a display name, normalized username and optional bio.
+4. User chooses 1–5 active interests.
+5. User confirms the summary. Client checks support usability; the server repeats all validation.
+6. A transaction replaces the user's selections, updates only their profile, and marks onboarding complete last.
+7. User is redirected to `/home`.
+
+## Viewing And Updating Profiles
+
+1. A completed authenticated user opens `/profile/[username]`.
+2. The server loads only a completed profile's display name, username, optional bio and active interest names.
+3. Unknown or incomplete usernames return not found.
+4. The user opens `/settings/profile` to update their own username, display name or bio.
+5. Shared server validation and RLS prevent invalid or cross-user updates.
 
 ## Reading A Daily Prime Protocol
 

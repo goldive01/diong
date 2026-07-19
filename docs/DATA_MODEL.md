@@ -1,6 +1,6 @@
 # Diong Data Model Proposal
 
-This document proposes first database entities and relationships for Supabase PostgreSQL. It does not define SQL migrations.
+This document describes the Diong data model. Phase 3 tables are implemented by `supabase/migrations/202607190001_onboarding_and_profiles.sql`; later entities remain proposals.
 
 ## Shared Assumptions
 
@@ -10,23 +10,28 @@ This document proposes first database entities and relationships for Supabase Po
 - Private records must be readable only by their owner unless a later explicit sharing feature is added.
 - Timestamps should be recorded for creation and updates.
 
-## profiles
+## profiles (implemented)
 
-- Purpose: Store public and account-adjacent profile information for each user.
-- Important fields: `id`, `user_id`, `username`, `display_name`, `bio`, `avatar_url`, `onboarding_completed_at`, `created_at`, `updated_at`.
-- Relationship to users: One profile belongs to one auth user.
-- Privacy requirements: Username, display name, bio, avatar, and public post association can be visible to authenticated users; account email remains in auth, not profile.
-- Useful indexes: Unique `user_id`; unique lowercase `username`; index `username`.
-- Validation rules: Username required after onboarding; username length and character limits; display name length limit; bio length limit.
+- Purpose: Store the authenticated user's public profile and onboarding state.
+- Fields: `id`, `username`, `display_name`, `bio`, `avatar_url`, `onboarding_completed`, `created_at`, `updated_at`.
+- Relationship: `id` is both the primary key and a cascading foreign key to `auth.users.id`.
+- Privacy: Authenticated users can read public profile rows. Owners alone can insert/repair and update their row. Email and auth metadata remain in Supabase Auth.
+- Validation: Completed profiles require a normalized 3–30 character username and display name. Usernames allow lowercase letters, numbers and underscores. Display names are 1–60 characters and bios at most 300.
+- Lifecycle: A secure auth trigger creates the minimum row. The migration idempotently repairs missing rows. Atomic onboarding is performed by `complete_onboarding` under the authenticated user's RLS context.
 
-## user_interests
+## interests (implemented)
 
-- Purpose: Store onboarding goal-interest selections.
-- Important fields: `id`, `user_id`, `interest_key`, `created_at`.
-- Relationship to users: Many interests belong to one user.
-- Privacy requirements: Private to the user unless later used only in aggregate internally.
-- Useful indexes: `user_id`; unique `(user_id, interest_key)`.
-- Validation rules: `interest_key` must come from an allowed list; prevent duplicates.
+- Purpose: Maintain the controlled onboarding interest catalog.
+- Fields: `id`, `slug`, `name`, `description`, `sort_order`, `is_active`, `created_at`.
+- Privacy: Authenticated users can read active rows. Normal users cannot write catalog data.
+- Seed: Twelve initial interests are inserted by the Phase 3 migration.
+
+## user_interests (implemented)
+
+- Purpose: Join authenticated users to the controlled interests catalog.
+- Fields: `user_id`, `interest_id`, `created_at`; `(user_id, interest_id)` is the primary key.
+- Privacy: Owners can read and manage their selections. Authenticated users can also read selections belonging to completed profiles so profile pages can show interest names; incomplete selections stay owner-only.
+- Validation: Onboarding requires 1–5 unique active interests and saves them in one transaction.
 
 ## prime_protocols
 

@@ -24,6 +24,8 @@ This roadmap is scoped for one developer. Each phase should be small enough to b
 - Implement onboarding for username, display name, and goal interests.
 - Add profile display and account settings basics.
 - Completion: new users complete onboarding before using main app routes; username validation works.
+- Implemented in this phase: versioned migration and RLS, secure profile creation/repair, three-stage onboarding, personalised home shell, authenticated public profile display, profile settings, and the minimum Supabase SSR auth foundation absent from the prior checkout.
+- Deferred as planned: Daily Prime assignment and all Phase 4+ functionality.
 
 ## Phase 4: Prime Protocol Database And Daily Prime Experience
 
