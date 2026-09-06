@@ -333,6 +333,48 @@ to a day before or after their own local midnight. Adding a per-user time zone
 would resolve this for Connections and for the Daily Prime engine together; it is
 out of scope for V1.
 
+## Phase C: Application / Domain Layer
+
+Phase C adds the typed, framework-free application layer under
+`src/lib/connections/`. No routes or UI yet.
+
+| File | Responsibility |
+| --- | --- |
+| `connection-vocab.ts` | Runtime mirrors of the `src/types/database.ts` vocabulary unions (`CONNECTION_TYPES`, `CONNECTION_PURPOSES`, `INTERACTION_TYPES`) plus `isConnectionType` / `isConnectionPurpose` / `isInteractionType` guards. The `Record<Union, true>` annotations make the compiler reject the file if a union member is missing, so `database.ts` stays the source of truth. |
+| `connection-validation.ts` | Pure normalisation + field-level validation for connection create/update input and interaction input. Produces `ConnectionErrors` / `InteractionErrors` maps for forms. Also `connectionColumns()` (input → DB column object) and `interactionRpcArgs()` (input → RPC argument object). |
+| `connection-labels.ts` | Display copy: type / purpose / interaction / nudge-status label maps and `suggestedConnectionAction()`. Pure and deterministic. |
+| `connections-data.ts` | Typed reads: `listConnections`, `getConnection`, `getConnectionNudges`, `getTopConnectionNudge`. Each takes `SupabaseClient<Database>`. |
+| `record-interaction.ts` | `recordConnectionInteraction()` — the only application entry point for creating an interaction. Calls the `record_connection_interaction` RPC and returns a small `RecordInteractionResult`. |
+
+Key rules this layer keeps:
+
+- **The database and the RPC remain authoritative.** `connection-validation.ts`
+  is a usability layer only; every limit it checks is also enforced by a CHECK
+  constraint or the RPC.
+- **`last_meaningful_contact_at` stays system-managed.** No function in this
+  layer writes it; `connectionColumns()` does not include it.
+- **Interactions stay RPC-only.** `record-interaction.ts` calls the RPC;
+  nothing inserts into `connection_interactions` directly. The table
+  Insert/Update types in `database.ts` remain `Record<string, never>`.
+- **The nudge algorithm is not reimplemented in TypeScript.**
+  `getConnectionNudges` is a thin wrapper over `get_connection_nudges()`, and
+  `getTopConnectionNudge` relies on that function's documented row ordering.
+- **Defence in depth.** `listConnections` / `getConnection` pass an explicit
+  `userId` and filter on it in addition to RLS, matching
+  `src/lib/profile-data.ts`.
+
+### Test command
+
+```bash
+npm test          # vitest run — pure logic only (validation + labels)
+```
+
+Vitest (dev dependency) is configured by `vitest.config.ts` (`node`
+environment, `src/**/*.test.ts`). Tests cover `connection-validation.ts` and
+`connection-labels.ts` only. The SQL nudge algorithm is not unit-tested in
+TypeScript; `get_connection_nudges()` remains authoritative and is exercised by
+the Phase B verification SQL.
+
 ## Verification SQL
 
 Run in the Supabase SQL Editor after applying the migration.
