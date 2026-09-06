@@ -92,6 +92,66 @@ export type DailyPrime = {
   completed_at: string | null;
 };
 
+export type ConnectionType =
+  | "friend"
+  | "family"
+  | "mentor"
+  | "accountability_partner"
+  | "colleague"
+  | "professional_contact"
+  | "collaborator"
+  | "study_partner"
+  | "community"
+  | "coach_adviser"
+  | "other";
+
+export type ConnectionPurpose =
+  | "career_growth"
+  | "accountability"
+  | "learning"
+  | "friendship"
+  | "family"
+  | "collaboration"
+  | "networking"
+  | "support"
+  | "shared_goal"
+  | "community"
+  | "personal_growth"
+  | "other";
+
+export type ConnectionInteractionType =
+  | "message"
+  | "call"
+  | "video"
+  | "in_person"
+  | "email"
+  | "other";
+
+export type Connection = {
+  id: number;
+  user_id: string;
+  name: string;
+  connection_type: ConnectionType;
+  connection_purpose: ConnectionPurpose;
+  why_it_matters: string | null;
+  preferred_contact_days: number | null;
+  last_meaningful_contact_at: string | null;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ConnectionInteraction = {
+  id: number;
+  user_id: string;
+  connection_id: number;
+  interaction_type: ConnectionInteractionType;
+  occurred_at: string;
+  notes: string | null;
+  created_at: string;
+};
+
 type TableDefinition<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -157,6 +217,44 @@ export type Database = {
         PrimeCompletion,
         Omit<PrimeCompletion, "id" | "completed_at"> & { id?: number; completed_at?: string },
         Partial<Omit<PrimeCompletion, "id" | "completed_at">>
+      >;
+      connections: TableDefinition<
+        Connection,
+        // Mirrors the column-scoped INSERT grant in the migration. id,
+        // created_at and updated_at are owned by defaults/trigger;
+        // last_meaningful_contact_at is system-managed via the Phase B RPC.
+        {
+          user_id: string;
+          name: string;
+          connection_type: ConnectionType;
+          connection_purpose: ConnectionPurpose;
+          why_it_matters?: string | null;
+          preferred_contact_days?: number | null;
+          notes?: string | null;
+          is_active?: boolean;
+        },
+        // Mirrors the column-scoped UPDATE grant in the migration. user_id, id,
+        // the timestamps and last_meaningful_contact_at are not client-writable.
+        Partial<
+          Pick<
+            Connection,
+            | "name"
+            | "connection_type"
+            | "connection_purpose"
+            | "why_it_matters"
+            | "preferred_contact_days"
+            | "notes"
+            | "is_active"
+          >
+        >
+      >;
+      connection_interactions: TableDefinition<
+        ConnectionInteraction,
+        // No direct INSERT grant or policy in V1. Rows are created only by the
+        // Phase B record_connection_interaction() SECURITY DEFINER RPC.
+        Record<string, never>,
+        // Append-only: no UPDATE or DELETE grant or policy exists.
+        Record<string, never>
       >;
     };
     Views: Record<string, never>;
