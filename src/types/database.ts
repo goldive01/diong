@@ -152,6 +152,32 @@ export type ConnectionInteraction = {
   created_at: string;
 };
 
+export type ConnectionNudgeStatus =
+  | "due"
+  | "approaching"
+  | "up_to_date"
+  | "never_contacted";
+
+// Row shape returned by public.get_connection_nudges().
+export type ConnectionNudge = {
+  connection_id: number;
+  name: string;
+  connection_type: ConnectionType;
+  connection_purpose: ConnectionPurpose;
+  last_meaningful_contact_at: string | null;
+  preferred_contact_days: number | null;
+  days_since: number | null;
+  status: ConnectionNudgeStatus;
+};
+
+// Row shape returned by public.record_connection_interaction().
+export type RecordedConnectionInteraction = {
+  interaction_id: number;
+  connection_id: number;
+  occurred_at: string;
+  last_meaningful_contact_at: string;
+};
+
 type TableDefinition<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -275,6 +301,19 @@ export type Database = {
       complete_daily_prime: {
         Args: { p_assignment_id: number };
         Returns: string;
+      };
+      record_connection_interaction: {
+        Args: {
+          p_connection_id: number;
+          p_interaction_type: ConnectionInteractionType;
+          p_occurred_at?: string;
+          p_notes?: string | null;
+        };
+        Returns: RecordedConnectionInteraction[];
+      };
+      get_connection_nudges: {
+        Args: Record<never, never>;
+        Returns: ConnectionNudge[];
       };
     };
     Enums: Record<string, never>;

@@ -1,9 +1,14 @@
-# Diong Connections Setup (Phase A)
+# Diong Connections Setup (Phases A–B)
 
-This phase adds the database foundation for **Diong Connections**. It creates two
-tables, ownership-integrity constraints and owner-only Row Level Security. It does
-**not** add RPC functions, routes, UI, `/home` changes, Daily Prime changes, or
-any AI or third-party integration. Those arrive in later phases.
+**Phase A** adds the database foundation for **Diong Connections**: two tables,
+ownership-integrity constraints and owner-only Row Level Security.
+
+**Phase B** adds the secure server-side operations: a `SECURITY DEFINER` RPC for
+recording an interaction (which also maintains the denormalised last-contact
+value atomically) and a deterministic, read-only nudge function.
+
+Neither phase adds routes, UI, `/home` changes, Daily Prime changes, or any AI or
+third-party integration. Those arrive in later phases.
 
 ## Purpose Of Diong Connections
 
@@ -26,10 +31,15 @@ The feature is designed to help a user answer:
 All connection data is private to its authenticated owner. There are no public
 connection profiles and no automatic sharing.
 
-## Migration To Run
+## Migrations To Run
 
-Run `supabase/migrations/202609060001_connections.sql` against the target
-Supabase project.
+Apply in order against the target Supabase project:
+
+1. `supabase/migrations/202609060001_connections.sql` (Phase A — tables + RLS)
+2. `supabase/migrations/202609060002_connection_rpcs.sql` (Phase B — RPCs)
+
+Migration 2 depends on migration 1 and on the shared `public.set_updated_at()`
+function from `202607190001_onboarding_and_profiles.sql`.
 
 If the Supabase CLI is linked and configured:
 
@@ -47,20 +57,22 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 
 ### Apply With Supabase SQL Editor
 
-When local migration tooling is not configured:
+When local migration tooling is not configured, apply each migration file the
+same way, in order:
 
 1. Test in a non-production project first and back up any existing data.
 2. Open the target project in the Supabase Dashboard, then open **SQL Editor**.
-3. Open `supabase/migrations/202609060001_connections.sql` locally and copy the
-   complete file.
+3. Open the migration file locally and copy the complete file.
 4. Create a new SQL Editor query, paste the migration, confirm the selected
    project, and run it once.
 5. Confirm the transaction completed without an error.
 6. Record the filename and application date in the deployment record. Do not
-   rerun this migration against a database where it already succeeded.
+   rerun a migration against a database where it already succeeded.
 
-The migration is wrapped in a single `begin; ... commit;` transaction and is not
-idempotent; it will fail cleanly if the tables already exist.
+Each migration is wrapped in a single `begin; ... commit;` transaction and is not
+idempotent. Migration 1 fails cleanly if the tables already exist; migration 2
+fails cleanly if the functions already exist (`create function`, not
+`create or replace`).
 
 ## Schema
 
@@ -169,20 +181,10 @@ either table to other users. Connections have no public surface.
 
 ## Interaction Creation Is RPC-Only
 
-Beginning in Phase B, `connection_interactions` rows are created exclusively by a
-`record_connection_interaction(...)` `SECURITY DEFINER` RPC. In Phase A there is
-no way for a client to write the table at all (no `insert` grant, no `insert`
-policy).
-
-The RPC will, in one transaction:
-
-- verify `auth.uid()` and that the target connection belongs to the caller;
-- validate `occurred_at`, rejecting or clamping future timestamps;
-- insert the interaction row;
-- update `connections.last_meaningful_contact_at`.
-
-Application code calls that RPC rather than inserting into
-`connection_interactions` directly.
+`connection_interactions` rows are created exclusively by the
+`public.record_connection_interaction(...)` `SECURITY DEFINER` RPC (Phase B).
+There is no direct `insert` grant or policy on the table, so a client cannot
+write it any other way.
 
 ## Interaction Append-Only Decision
 
@@ -200,6 +202,136 @@ recomputing that value in the same transaction could leave the connection's
 through the Phase B RPC keeps the denormalised value and the interaction log in
 step. A future controlled correction/delete RPC can remove an interaction and
 safely recompute `last_meaningful_contact_at`.
+
+## Phase B: Server-Side Operations
+
+### `public.record_connection_interaction(...)`
+
+```text
+record_connection_interaction(
+  p_connection_id    bigint,
+  p_interaction_type text,
+  p_occurred_at      timestamptz default now(),
+  p_notes            text        default null
+) returns table (
+  interaction_id             bigint,
+  connection_id              bigint,
+  occurred_at                timestamptz,
+  last_meaningful_contact_at timestamptz
+)
+```
+
+- `language plpgsql`, `security definer`, `set search_path = ''`, all identifiers
+  schema-qualified.
+- Execution: `revoke all ... from public, anon;` then
+  `grant execute ... to authenticated;`
+- The caller never supplies `user_id`; the function uses `auth.uid()`.
+
+Steps, all in one transaction:
+
+1. Require an authenticated user (`auth.uid()` not null, else `42501`).
+2. Validate `p_interaction_type` against the controlled vocabulary (else
+   `22023`).
+3. Trim `p_notes` to `null` if blank; reject if longer than 2000 chars
+   (`22023`).
+4. Resolve `occurred_at`: `coalesce(p_occurred_at, now())`. Reject if more than
+   five minutes in the future (`22023`); otherwise clamp to `now()` so a stored
+   `occurred_at` is never in the future.
+5. Confirm a `connections` row exists with `id = p_connection_id` **and**
+   `user_id = auth.uid()` (else `42501`). This is the only place the connection
+   is resolved, so an interaction cannot be attached to another user's
+   connection.
+6. Insert the interaction with `user_id = auth.uid()`.
+7. Update the parent connection:
+   `last_meaningful_contact_at = greatest(coalesce(existing, occurred_at), occurred_at)`.
+8. Return one row: the new interaction id, the connection id, the effective
+   `occurred_at`, and the resulting `last_meaningful_contact_at`.
+
+**Atomic last-contact behaviour.** The `greatest(...)` expression only ever moves
+`last_meaningful_contact_at` forward. Recording an interaction that occurred
+before the current value leaves the value unchanged (the interaction is still
+stored — the log is complete, the denormalised pointer just does not regress).
+The insert and the update happen in the same function call, so the interaction
+log and the pointer can never drift apart. The update also fires the
+`connections_set_updated_at` trigger, so `updated_at` advances whenever an
+interaction is recorded, including for a back-dated one.
+
+Recording an interaction against an **inactive** connection is allowed (the
+ownership check is the security boundary; a user may legitimately log a
+reconnection). It does not automatically set `is_active = true`.
+
+### `public.get_connection_nudges()`
+
+```text
+get_connection_nudges() returns table (
+  connection_id              bigint,
+  name                       text,
+  connection_type            text,
+  connection_purpose         text,
+  last_meaningful_contact_at  timestamptz,
+  preferred_contact_days      integer,
+  days_since                 integer,   -- null when never contacted
+  status                     text       -- due | approaching | up_to_date | never_contacted
+)
+```
+
+- `language plpgsql`, `security definer`, `stable`, `set search_path = ''`.
+- Execution: `revoke all ... from public, anon;` then
+  `grant execute ... to authenticated;`
+- Requires an authenticated user (`42501` otherwise).
+- Returns **only** rows where `user_id = auth.uid()` and `is_active` is true.
+  Inactive connections are never returned.
+- Deterministic. No randomness, no AI, no persisted nudge table.
+
+**`days_since`** = whole UTC calendar days between the connection's
+`last_meaningful_contact_at` and today, clamped at 0. `null` when the connection
+has never been contacted. The clamp means a future-dated last-contact value (a
+clock anomaly) yields `0`, never a negative number.
+
+**Status**, evaluated in this order:
+
+| Status | Condition |
+| --- | --- |
+| `never_contacted` | `last_meaningful_contact_at is null` and (no rhythm set, or fewer than `preferred_contact_days` days since the connection was created) |
+| `due` | never contacted **and** at least `preferred_contact_days` days since creation; **or** `days_since >= preferred_contact_days` (exactly at the rhythm counts as due) |
+| `approaching` | `days_since >= preferred_contact_days - window` (see window formula below) |
+| `up_to_date` | `preferred_contact_days is null` (informational only, never nagged); or none of the above |
+
+The `approaching` window is:
+
+```text
+window = least(
+  14,
+  greatest(2, ceil(preferred_contact_days * 0.2)),
+  greatest(0, preferred_contact_days - 1)
+)
+```
+
+Approximately 20% of the rhythm, at least 2 days, **hard-capped at 14 days**, and
+never the whole rhythm (so a connection just contacted is never immediately
+`approaching`). Worked examples:
+
+| rhythm (days) | approaching window (days) | notified when |
+| --- | --- | --- |
+| 1 | 0 | never `approaching` — `up_to_date` straight to `due` |
+| 7 | 2 | in the last 2 days before due |
+| 30 | 6 | in the last 6 days before due |
+| 90 | 14 | in the last 14 days before due (cap) |
+| 365 | 14 | in the last 14 days before due (cap) |
+
+Rows are ordered `due`, then `never_contacted`, then `approaching`, then
+`up_to_date`; within a status, longest overdue first, then oldest connection
+first.
+
+### UTC / server-date limitation
+
+Both the `days_since` calculation and the "days since creation" check use
+`(now() at time zone 'UTC')::date`, so results are independent of the database
+session time zone. They are **not** aware of the user's local time zone. A user
+several hours from UTC may see a connection change from `approaching` to `due` up
+to a day before or after their own local midnight. Adding a per-user time zone
+would resolve this for Connections and for the Daily Prime engine together; it is
+out of scope for V1.
 
 ## Verification SQL
 
@@ -324,7 +456,104 @@ owner if you want to verify interaction isolation now.)
    `updated_at` on `insert` (not in the column-scoped grant).
 6. Deleting A's connection removes A's seeded interactions for that connection.
 
+## Phase B Verification SQL
+
+### Functions exist with the expected security settings
+
+```sql
+select
+  p.proname,
+  p.prosecdef        as security_definer,
+  p.provolatile      as volatility,      -- 'v' volatile, 's' stable
+  p.proconfig        as config,          -- expect {search_path=""}
+  pg_get_function_identity_arguments(p.oid) as args
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname in ('record_connection_interaction', 'get_connection_nudges')
+order by p.proname;
+```
+
+Expect `security_definer = true` and `config = {search_path=""}` for both.
+`record_connection_interaction` is `v` (volatile); `get_connection_nudges` is
+`s` (stable).
+
+### Execution privileges
+
+```sql
+select
+  p.proname,
+  coalesce(has_function_privilege('authenticated', p.oid, 'execute'), false) as authenticated_exec,
+  coalesce(has_function_privilege('anon', p.oid, 'execute'), false)          as anon_exec,
+  coalesce(has_function_privilege('public', p.oid, 'execute'), false)        as public_exec
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname in ('record_connection_interaction', 'get_connection_nudges');
+```
+
+Expect `authenticated_exec = true`, `anon_exec = false`, `public_exec = false`
+for both.
+
+### Nudge status smoke test
+
+As an authenticated user with several active connections in different states:
+
+```sql
+select connection_id, name, preferred_contact_days, days_since, status
+from public.get_connection_nudges();
+```
+
+Check: a connection contacted exactly `preferred_contact_days` ago is `due`; one
+with `preferred_contact_days` null is `up_to_date`; a brand-new connection with
+no contact is `never_contacted`; an inactive connection does not appear at all;
+`days_since` is never negative.
+
+## Phase B Manual Two-User Authorization Checks
+
+Using Supabase clients authenticated separately as users A and B.
+
+1. **A records an interaction** on A's own connection via
+   `select * from public.record_connection_interaction(<A_conn_id>, 'message')`.
+   The row is created; `last_meaningful_contact_at` on that connection updates.
+2. **B cannot target A's connection.** B calling
+   `record_connection_interaction(<A_conn_id>, 'message')` raises
+   `This connection is not available.` (SQLSTATE `42501`). No row is written to
+   `connection_interactions`, and A's connection is unchanged.
+3. **Back-dated interaction does not regress the pointer.** A records an
+   interaction with `p_occurred_at` set to a date earlier than the current
+   `last_meaningful_contact_at`. The interaction row is stored, but
+   `last_meaningful_contact_at` is unchanged.
+4. **Future timestamp is rejected.** A calls the RPC with `p_occurred_at` set a
+   day ahead. It raises `Interaction time cannot be in the future.` (`22023`).
+   A timestamp a minute ahead is accepted and stored as `now()`.
+5. **Invalid interaction type is rejected.** `p_interaction_type => 'lunch'`
+   raises `Interaction type is invalid.` (`22023`).
+6. **Null rhythm is never nagged.** A connection with `preferred_contact_days`
+   null never appears with status `due` or `approaching` in
+   `get_connection_nudges()`.
+7. **Inactive connections are excluded.** Setting `is_active = false` on a
+   connection removes it from `get_connection_nudges()` output immediately.
+8. **B sees only B's nudges.** `get_connection_nudges()` run as B never returns
+   any of A's connections.
+9. **Anon cannot execute.** An unauthenticated client calling either function is
+   rejected (no execute privilege / `Authentication is required.`).
+
 ## Rollback Considerations
+
+To roll back Phase B only:
+
+```sql
+begin;
+drop function if exists public.get_connection_nudges();
+drop function if exists public.record_connection_interaction(bigint, text, timestamptz, text);
+commit;
+```
+
+Removing these functions does not touch any data. Any application code calling
+`supabase.rpc(...)` for them must be reverted first.
+
+To roll back Phase A as well (destructive):
 
 Rollback is manual because dropping these tables deletes connection and
 interaction data. Back up first. In dependency order:
