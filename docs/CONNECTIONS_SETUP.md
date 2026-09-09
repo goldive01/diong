@@ -375,6 +375,74 @@ environment, `src/**/*.test.ts`). Tests cover `connection-validation.ts` and
 TypeScript; `get_connection_nudges()` remains authoritative and is exercised by
 the Phase B verification SQL.
 
+## Phase D: Dashboard And Add-Connection Flow
+
+Phase D adds the first user-facing screens. No schema or RPC changes.
+
+| Route | File | Purpose |
+| --- | --- | --- |
+| `/connections` | `app/(protected)/connections/page.tsx` | Dashboard. `requireCompletedProfile()`, then `getConnectionNudges()` + `listConnections()`. Groups nudges into **Needs attention** (`due` + `never_contacted`), **Coming up** (`approaching`) and **Up to date** (`up_to_date`). Calm empty state when the user has no connections. Inactive connections are not shown. |
+| `/connections/new` | `app/(protected)/connections/new/page.tsx` + `src/components/connections/connection-form.tsx` | Add-connection form. |
+
+Supporting files:
+
+- `app/(protected)/connections/actions.ts` — `createConnection` server action.
+  A `"use server"` module: its only runtime export is the async action.
+- `src/lib/connections/connection-form-state.ts` — plain module holding the
+  shared form types (`ConnectionFormValues`, `CreateConnectionState`) and the
+  `EMPTY_CONNECTION_FORM` constant, imported by both `actions.ts` and
+  `connection-form.tsx` (runtime constants cannot be exported from `"use server"`).
+- `src/components/connections/connection-card.tsx` — one restrained card (name,
+  type · purpose, status label, last-contact line, rhythm line, suggested
+  action). Never shows notes; no scores or charts.
+- `src/lib/connections/connection-labels.ts` — added `CONTACT_RHYTHM_OPTIONS`,
+  `describeLastMeaningfulContact()`, `describeContactRhythm()`.
+- `src/components/app/app-header.tsx` — "Connections" nav link.
+- `src/lib/profile-validation.ts` — `"connections"` added to
+  `RESERVED_USERNAMES`.
+
+### `createConnection` server action
+
+1. Reads the six form fields from `FormData` into a string-only
+   `ConnectionFormValues` (echoed back on failure so nothing the user typed is
+   lost).
+2. `normalizeConnectionInput()` → `validateConnectionInput()`. On any error:
+   returns `{ errors, message, values }` — no database call.
+3. `requireCompletedProfile()` for the authenticated context.
+4. Inserts `{ user_id: <from session>, ...connectionColumns(input) }` — exactly
+   the eight columns the Phase A INSERT grant allows. `id`, `created_at`,
+   `updated_at` and `last_meaningful_contact_at` are never set. `user_id` never
+   comes from form input.
+5. Database errors are logged server-side and mapped to a safe generic message;
+   raw Postgres text is never returned to the browser.
+6. On success: `revalidatePath("/connections")` then `redirect("/connections")`.
+
+### Nudge status stays authoritative in SQL
+
+`/connections` never computes nudge status. It renders whatever
+`get_connection_nudges()` returns. If that RPC fails but the user has
+connections, the page shows a "reminders unavailable" notice rather than a false
+empty state.
+
+## Phase D Manual Verification
+
+No database changes. Sign in as a completed-onboarding user.
+
+| # | Check | Expected |
+| --- | --- | --- |
+| A | Open `/connections` with no connections | Empty state: "Keep track of the people who matter to your growth", the list of connection kinds, and an "Add your first connection" button. No romantic copy. |
+| B | Add a **friend** (type `friend`, purpose `friendship`, no rhythm) | Redirects to `/connections`; the connection appears under **Needs attention** as "Not yet connected" with the friend suggested action. |
+| C | Add a **mentor** with purpose `career_growth` and rhythm "About monthly" | Card shows "Mentor · Career growth", "Rhythm: About monthly", mentor suggested action. |
+| D | Add a **family** connection | Card shows "Family · …"; suggested action is the family line. |
+| E | Submit with an empty name / no type / no purpose | Stays on the form; field errors appear; focus moves to the first invalid field; **all typed values are retained**. |
+| F | Paste 200 characters into "Why this person matters" / 3000 into Notes | Input caps at 500 / 2000; counter shows the limit; server also rejects an over-limit value if forced. |
+| G | Choose each contact-rhythm option and save | Value persists; dashboard card shows the matching friendly label. |
+| H | Successful save | Browser lands on `/connections`, new card visible immediately (revalidated). |
+| I | In Supabase, `select user_id from public.connections order by created_at desc limit 1` | Matches the signed-in user's `auth.users.id`. |
+| J | Reload `/connections` | Created connections still listed (persisted, not just cached). |
+| K | Sign in as a second user and open `/connections` | Only that user's connections (or the empty state). Never the first user's. Confirm with `get_connection_nudges()` run as each user. |
+| L | Open `/connections` and `/connections/new` at 375 px width | Single-column cards, form fields full-width, header nav wraps, no horizontal scroll. Tablet (768 px): two-column card grid. |
+
 ## Verification SQL
 
 Run in the Supabase SQL Editor after applying the migration.

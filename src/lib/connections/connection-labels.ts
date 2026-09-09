@@ -84,3 +84,37 @@ export function suggestedConnectionAction(input: {
   if (input.status === "up_to_date") return "";
   return SUGGESTED_ACTION_BY_TYPE[input.connectionType];
 }
+
+// Human-friendly contact-rhythm choices offered by the add-connection form.
+// Every non-empty value is a number of days within the 1-365 range the
+// database and connection-validation.ts accept. "" means no rhythm is tracked.
+export const CONTACT_RHYTHM_OPTIONS: readonly {
+  value: string;
+  label: string;
+}[] = [
+  { value: "", label: "No set rhythm" },
+  { value: "7", label: "About weekly" },
+  { value: "14", label: "About every 2 weeks" },
+  { value: "30", label: "About monthly" },
+  { value: "60", label: "About every 2 months" },
+  { value: "90", label: "About every 3 months" },
+  { value: "180", label: "About every 6 months" },
+];
+
+/** Plain-language description of days since the last meaningful contact. */
+export function describeLastMeaningfulContact(daysSince: number | null): string {
+  if (daysSince === null) return "No meaningful contact recorded yet";
+  if (daysSince <= 0) return "Last meaningful contact: today";
+  if (daysSince === 1) return "Last meaningful contact: yesterday";
+  return `Last meaningful contact: ${daysSince} days ago`;
+}
+
+/** Plain-language description of a preferred contact rhythm in days. */
+export function describeContactRhythm(days: number | null): string {
+  if (days === null) return "No set rhythm";
+  const preset = CONTACT_RHYTHM_OPTIONS.find(
+    (option) => option.value === String(days),
+  );
+  if (preset) return preset.label;
+  return `About every ${days} days`;
+}

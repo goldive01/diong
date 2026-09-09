@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   CONNECTION_PURPOSE_LABEL,
   CONNECTION_TYPE_LABEL,
+  CONTACT_RHYTHM_OPTIONS,
+  describeContactRhythm,
+  describeLastMeaningfulContact,
   INTERACTION_TYPE_LABEL,
   NUDGE_STATUS_LABEL,
   suggestedConnectionAction,
@@ -11,6 +14,11 @@ import {
   CONNECTION_TYPES,
   INTERACTION_TYPES,
 } from "./connection-vocab";
+import {
+  CONTACT_DAYS_MAX,
+  CONTACT_DAYS_MIN,
+  validateConnectionInput,
+} from "./connection-validation";
 import type { ConnectionNudgeStatus } from "@/src/types/database";
 
 // Terminology Diong must never use: dating / romance, medical / treatment
@@ -123,5 +131,69 @@ describe("suggestedConnectionAction", () => {
       status: "due",
     });
     expect(first).toBe(second);
+  });
+});
+
+describe("describeLastMeaningfulContact", () => {
+  it("handles the never-contacted, today and yesterday cases", () => {
+    expect(describeLastMeaningfulContact(null)).toBe(
+      "No meaningful contact recorded yet",
+    );
+    expect(describeLastMeaningfulContact(0)).toBe(
+      "Last meaningful contact: today",
+    );
+    expect(describeLastMeaningfulContact(1)).toBe(
+      "Last meaningful contact: yesterday",
+    );
+  });
+
+  it("describes a number of days and never shows a negative", () => {
+    expect(describeLastMeaningfulContact(24)).toBe(
+      "Last meaningful contact: 24 days ago",
+    );
+    expect(describeLastMeaningfulContact(-3)).toBe(
+      "Last meaningful contact: today",
+    );
+  });
+});
+
+describe("describeContactRhythm", () => {
+  it("uses the friendly preset label when one matches", () => {
+    expect(describeContactRhythm(7)).toBe("About weekly");
+    expect(describeContactRhythm(30)).toBe("About monthly");
+  });
+
+  it("falls back to a plain description and handles null", () => {
+    expect(describeContactRhythm(21)).toBe("About every 21 days");
+    expect(describeContactRhythm(null)).toBe("No set rhythm");
+  });
+});
+
+describe("CONTACT_RHYTHM_OPTIONS", () => {
+  it("offers a blank option and clean labels", () => {
+    expect(CONTACT_RHYTHM_OPTIONS[0].value).toBe("");
+    for (const option of CONTACT_RHYTHM_OPTIONS) {
+      assertClean(option.label);
+    }
+  });
+
+  it("every non-blank value is a rhythm the validator accepts", () => {
+    for (const option of CONTACT_RHYTHM_OPTIONS) {
+      if (option.value === "") continue;
+      const days = Number(option.value);
+      expect(Number.isInteger(days)).toBe(true);
+      expect(days).toBeGreaterThanOrEqual(CONTACT_DAYS_MIN);
+      expect(days).toBeLessThanOrEqual(CONTACT_DAYS_MAX);
+      const errors = validateConnectionInput({
+        name: "A",
+        connectionType: "friend",
+        connectionPurpose: "friendship",
+        whyItMatters: "",
+        preferredContactDays: days,
+        notes: "",
+        isActive: true,
+      });
+      expect(errors.preferredContactDays).toBeUndefined();
+    }
   });
 });
