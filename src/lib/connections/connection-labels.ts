@@ -109,6 +109,32 @@ export function describeLastMeaningfulContact(daysSince: number | null): string 
   return `Last meaningful contact: ${daysSince} days ago`;
 }
 
+/**
+ * Absolute, plain-language date and time for a stored interaction or
+ * last-contact timestamp. Returns "" for a missing or unparseable value so
+ * callers can choose their own fallback copy.
+ */
+export function formatInteractionMoment(iso: string | null): string {
+  if (!iso) return "";
+  const when = new Date(iso);
+  if (Number.isNaN(when.getTime())) return "";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(when);
+}
+
+/** One-line summary of a connection's last meaningful contact timestamp. */
+export function describeLastContactMoment(iso: string | null): string {
+  const formatted = formatInteractionMoment(iso);
+  return formatted === ""
+    ? "No meaningful contact recorded yet"
+    : `Last meaningful contact: ${formatted}`;
+}
+
 /** Plain-language description of a preferred contact rhythm in days. */
 export function describeContactRhythm(days: number | null): string {
   if (days === null) return "No set rhythm";

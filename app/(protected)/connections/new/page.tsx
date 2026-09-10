@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireCompletedProfile } from "@/src/lib/auth";
 import { ConnectionForm } from "@/src/components/connections/connection-form";
+import { createConnection } from "@/app/(protected)/connections/actions";
 
 export const metadata = {
   title: "Add a connection",
@@ -30,7 +31,7 @@ export default async function NewConnectionPage() {
           later.
         </p>
 
-        <ConnectionForm />
+        <ConnectionForm action={createConnection} />
       </section>
     </main>
   );

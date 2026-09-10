@@ -424,6 +424,99 @@ Supporting files:
 connections, the page shows a "reminders unavailable" notice rather than a false
 empty state.
 
+## Phase E: Connection Lifecycle
+
+Phase E completes the core lifecycle. No schema, RPC or `src/types/database.ts`
+changes. No `/home`, Daily Prime, AI or third-party changes.
+
+| Route | File | Purpose |
+| --- | --- | --- |
+| `/connections/[id]` | `app/(protected)/connections/[id]/page.tsx` + `src/components/connections/connection-detail.tsx` | Connection detail: facts, private notes, active state, record-interaction form, interaction history, deactivate/reactivate. |
+| `/connections/[id]/edit` | `app/(protected)/connections/[id]/edit/page.tsx` | Edit the six detail fields. Reuses `ConnectionForm`. |
+
+Both pages call `requireCompletedProfile()` then `getConnection(supabase, userId, Number(id))`.
+A non-numeric id, a missing connection, or another user's connection all return
+`notFound()` (`getConnection` returns `null` for every one of those cases).
+
+### Server actions — `app/(protected)/connections/[id]/actions.ts`
+
+A `"use server"` module. Every export is an async server action, and every
+connection-scoped action takes the connection id as a **bound first argument**
+supplied on the server — the id is never a form field, so the browser cannot
+read or change it. Every action runs `requireCompletedProfile()` and an explicit
+`ownsConnection()` check (on top of RLS and a `user_id`-scoped `where` on the
+write), and maps any database error to a safe generic message — raw
+Postgres/Supabase text is only ever `console.error`'d.
+
+| Action | Behaviour |
+| --- | --- |
+| `updateConnection(id, …)` | Validates with `normalizeConnectionInput` / `validateConnectionInput`. Writes exactly `name`, `connection_type`, `connection_purpose`, `why_it_matters`, `preferred_contact_days`, `notes`. Never writes `is_active`, `user_id`, `id`, the timestamps or `last_meaningful_contact_at`. On success: revalidates `/connections` and `/connections/[id]`, then redirects to `/connections/[id]`. |
+| `recordInteraction(id, …)` | Validates with `normalizeInteractionInput` / `validateInteractionInput`, then calls `recordConnectionInteraction()` (the RPC wrapper). Never inserts into `connection_interactions` directly. On success: revalidates `/connections` and `/connections/[id]`, clears the form, shows "Interaction recorded." The RPC moves `last_meaningful_contact_at` forward in the same transaction. |
+| `deactivateConnection(id)` / `reactivateConnection(id)` | Set `is_active` to `false` / `true` for an owned connection. Revalidate `/connections` and `/connections/[id]`. No hard delete in this phase. |
+
+### Nudge status stays authoritative in SQL
+
+Recording an interaction never computes status in React. `recordInteraction`
+revalidates `/connections`, which re-runs `get_connection_nudges()`; a connection
+can move from **Needs attention** to **Up to date** purely because the RPC
+recalculated it. The detail page shows the last-contact timestamp and history,
+not a status.
+
+### Inactive connections
+
+- Excluded from `get_connection_nudges()` (Phase B) and from the active dashboard
+  sections.
+- `listConnections(supabase, userId, { includeInactive: true })` on `/connections`
+  now surfaces them in a separate **Inactive** list so the owner can still open
+  and reactivate them.
+- Detail page, notes and full interaction history remain available while
+  inactive.
+
+### Supporting files (Phase E)
+
+- `src/components/connections/connection-detail.tsx` — server component that
+  composes the detail view and binds the id-scoped server actions.
+- `src/components/connections/record-interaction-form.tsx` — client form
+  (`"use client"`). Controlled values, stale-error clearing, client + server
+  validation, field-level errors with focus management, explicit
+  `type="submit"`. Form resets after a successful record.
+- `src/components/connections/interaction-history.tsx` — read-only log, newest
+  first, up to `RECENT_INTERACTION_LIMIT` (20) entries. No edit/delete in V1.
+- `src/components/connections/connection-active-toggle.tsx` — client toggle
+  button for the bound deactivate/reactivate action.
+- `src/lib/connections/connection-form-state.ts` — extended with
+  `InteractionFormValues` / `RecordInteractionState` / `EMPTY_INTERACTION_FORM`
+  / `ConnectionActiveState` and the `readConnectionFormValues` /
+  `readInteractionFormValues` FormData readers (shared by the actions).
+- `src/lib/connections/connection-labels.ts` — added `formatInteractionMoment()`
+  and `describeLastContactMoment()`.
+- `src/components/connections/connection-form.tsx` — now takes an `action` prop
+  (create vs edit), plus `submitLabel` / `pendingLabel` / `cancelHref`, and
+  keeps a non-preset `preferred_contact_days` selectable when editing.
+- `src/components/connections/connection-card.tsx` — the whole card links to
+  `/connections/[id]`.
+
+## Phase E Manual Verification
+
+No database changes. Sign in as a completed-onboarding user with at least one
+connection.
+
+| # | Check | Expected |
+| --- | --- | --- |
+| A | Click a dashboard card | Lands on `/connections/[id]` showing name, type, purpose, why-it-matters (if set), rhythm, last meaningful contact, private notes, Active badge, and interaction history. |
+| B | Open `/connections/999999` or `/connections/abc` | `notFound()` (404), no data leak. |
+| C | Open `/connections/[id]` for another user's connection id | `notFound()` (404). Confirm cross-user with two accounts. |
+| D | Record an interaction (type + note, no time) | Success message; the interaction appears at the top of the history; last-contact line updates. |
+| E | Record a **back-dated** interaction (a week ago) | Stored and listed; if earlier than the current last-contact, the last-contact line does not regress. |
+| F | Record a **future** interaction (tomorrow) | Rejected with a field error, both with JS on (client) and, if forced, server-side. |
+| G | After D, open `/connections` | The connection's status is recalculated by the RPC (e.g. **Needs attention** → **Up to date**). No status is computed in React. |
+| H | Edit the connection: change name, type, purpose, why, rhythm, notes | Redirects to `/connections/[id]` with the new values. `is_active`, `last_meaningful_contact_at`, `created_at` unchanged (check in Supabase). |
+| I | Edit with an empty name / no type | Stays on the form, field errors, focus on the first invalid field, typed values retained. |
+| J | Deactivate the connection | Badge → Inactive; it leaves the active dashboard sections and `get_connection_nudges()`; it appears under **Inactive** on `/connections`; history is intact. |
+| K | Reactivate it | Returns to the active sections and nudges; history unchanged. |
+| L | Sign in as a second user | Cannot open, edit, record against, or deactivate the first user's connection (all `notFound()` / "not available"). |
+| M | View `/connections/[id]` and `/connections/[id]/edit` at 375 px | Single column, full-width fields, no horizontal scroll. |
+
 ## Phase D Manual Verification
 
 No database changes. Sign in as a completed-onboarding user.

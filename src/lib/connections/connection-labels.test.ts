@@ -4,7 +4,9 @@ import {
   CONNECTION_TYPE_LABEL,
   CONTACT_RHYTHM_OPTIONS,
   describeContactRhythm,
+  describeLastContactMoment,
   describeLastMeaningfulContact,
+  formatInteractionMoment,
   INTERACTION_TYPE_LABEL,
   NUDGE_STATUS_LABEL,
   suggestedConnectionAction,
@@ -166,6 +168,29 @@ describe("describeContactRhythm", () => {
   it("falls back to a plain description and handles null", () => {
     expect(describeContactRhythm(21)).toBe("About every 21 days");
     expect(describeContactRhythm(null)).toBe("No set rhythm");
+  });
+});
+
+describe("formatInteractionMoment / describeLastContactMoment", () => {
+  it("formats a valid timestamp and includes the year", () => {
+    // Midday UTC stays on the same calendar year in every real time zone.
+    const formatted = formatInteractionMoment("2026-06-15T12:00:00.000Z");
+    expect(formatted).toContain("2026");
+    expect(formatted.length).toBeGreaterThan(0);
+  });
+
+  it("returns an empty string for a missing or unparseable value", () => {
+    expect(formatInteractionMoment(null)).toBe("");
+    expect(formatInteractionMoment("not-a-date")).toBe("");
+  });
+
+  it("describes the last-contact case with a fallback for null", () => {
+    expect(describeLastContactMoment(null)).toBe(
+      "No meaningful contact recorded yet",
+    );
+    expect(describeLastContactMoment("2026-06-15T12:00:00.000Z")).toContain(
+      "Last meaningful contact:",
+    );
   });
 });
 

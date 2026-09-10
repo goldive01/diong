@@ -5,6 +5,11 @@ import {
   listConnections,
 } from "@/src/lib/connections/connections-data";
 import { ConnectionCard } from "@/src/components/connections/connection-card";
+import {
+  CONNECTION_PURPOSE_LABEL,
+  CONNECTION_TYPE_LABEL,
+} from "@/src/lib/connections/connection-labels";
+import type { ConnectionListItem } from "@/src/lib/connections/connections-data";
 import type { ConnectionNudge } from "@/src/types/database";
 
 export const metadata = {
@@ -17,10 +22,14 @@ export default async function ConnectionsPage() {
   const { supabase, userId } = await requireCompletedProfile();
   const [nudges, connections] = await Promise.all([
     getConnectionNudges(supabase),
-    listConnections(supabase, userId),
+    listConnections(supabase, userId, { includeInactive: true }),
   ]);
 
-  const hasConnections = connections.length > 0;
+  const activeConnections = connections.filter((c) => c.is_active);
+  const inactiveConnections = connections.filter((c) => !c.is_active);
+  const hasAnyConnections = connections.length > 0;
+  const hasActiveConnections = activeConnections.length > 0;
+
   const needsAttention = nudges.filter((nudge) =>
     NEEDS_ATTENTION.includes(nudge.status),
   );
@@ -43,7 +52,7 @@ export default async function ConnectionsPage() {
             support your development.
           </p>
         </div>
-        {hasConnections && (
+        {hasAnyConnections && (
           <Link
             href="/connections/new"
             className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-[#263b2d] px-5 font-semibold text-white hover:bg-[#1d3024]"
@@ -53,41 +62,51 @@ export default async function ConnectionsPage() {
         )}
       </div>
 
-      {!hasConnections ? (
+      {!hasAnyConnections ? (
         <EmptyState />
-      ) : nudges.length === 0 ? (
-        <section
-          role="status"
-          className="mt-10 rounded-3xl border border-[#ded7c9] bg-white p-8"
-        >
-          <h2 className="text-xl font-semibold">
-            Connection reminders are unavailable right now
-          </h2>
-          <p className="mt-2 max-w-xl leading-7 text-[#5f6962]">
-            Your connections are saved safely. Please refresh the page to load
-            their status again.
-          </p>
-        </section>
       ) : (
         <div className="mt-10 space-y-10">
-          <ConnectionSection
-            title="Needs attention"
-            description="Worth reaching out to soon."
-            nudges={needsAttention}
-            emptyText="Nothing needs attention right now."
-          />
-          <ConnectionSection
-            title="Coming up"
-            description="Approaching your preferred rhythm."
-            nudges={comingUp}
-            emptyText="Nothing coming up just yet."
-          />
-          <ConnectionSection
-            title="Up to date"
-            description="No action needed."
-            nudges={upToDate}
-            emptyText="Connections you have contacted recently will appear here."
-          />
+          {hasActiveConnections && nudges.length === 0 ? (
+            <section
+              role="status"
+              className="rounded-3xl border border-[#ded7c9] bg-white p-8"
+            >
+              <h2 className="text-xl font-semibold">
+                Connection reminders are unavailable right now
+              </h2>
+              <p className="mt-2 max-w-xl leading-7 text-[#5f6962]">
+                Your connections are saved safely. Please refresh the page to
+                load their status again.
+              </p>
+            </section>
+          ) : (
+            hasActiveConnections && (
+              <>
+                <ConnectionSection
+                  title="Needs attention"
+                  description="Worth reaching out to soon."
+                  nudges={needsAttention}
+                  emptyText="Nothing needs attention right now."
+                />
+                <ConnectionSection
+                  title="Coming up"
+                  description="Approaching your preferred rhythm."
+                  nudges={comingUp}
+                  emptyText="Nothing coming up just yet."
+                />
+                <ConnectionSection
+                  title="Up to date"
+                  description="No action needed."
+                  nudges={upToDate}
+                  emptyText="Connections you have contacted recently will appear here."
+                />
+              </>
+            )
+          )}
+
+          {inactiveConnections.length > 0 && (
+            <InactiveSection connections={inactiveConnections} />
+          )}
         </div>
       )}
     </main>
@@ -125,6 +144,47 @@ function ConnectionSection({
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+function InactiveSection({
+  connections,
+}: {
+  connections: ConnectionListItem[];
+}) {
+  return (
+    <section aria-labelledby="section-inactive">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2
+          id="section-inactive"
+          className="text-lg font-semibold tracking-tight"
+        >
+          Inactive
+        </h2>
+        <p className="text-sm text-[#7a8378]">
+          Kept with their history, hidden from reminders.
+        </p>
+      </div>
+      <ul className="mt-4 space-y-2">
+        {connections.map((connection) => (
+          <li key={connection.id}>
+            <Link
+              href={`/connections/${connection.id}`}
+              className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-2xl border border-[#e0dacd] bg-white px-4 py-3 outline-none hover:border-[#b9c3a3] focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/30"
+            >
+              <span className="font-semibold text-[#1d2420]">
+                {connection.name}
+              </span>
+              <span className="text-sm text-[#6b746d]">
+                {CONNECTION_TYPE_LABEL[connection.connection_type]}
+                <span aria-hidden="true"> · </span>
+                {CONNECTION_PURPOSE_LABEL[connection.connection_purpose]}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

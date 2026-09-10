@@ -9,31 +9,16 @@ import {
   normalizeConnectionInput,
   validateConnectionInput,
 } from "@/src/lib/connections/connection-validation";
-import type {
-  ConnectionFormValues,
-  CreateConnectionState,
+import {
+  readConnectionFormValues,
+  type CreateConnectionState,
 } from "@/src/lib/connections/connection-form-state";
-
-function readForm(formData: FormData): ConnectionFormValues {
-  const get = (key: string): string => {
-    const value = formData.get(key);
-    return typeof value === "string" ? value : "";
-  };
-  return {
-    name: get("name"),
-    connectionType: get("connectionType"),
-    connectionPurpose: get("connectionPurpose"),
-    whyItMatters: get("whyItMatters"),
-    preferredContactDays: get("preferredContactDays"),
-    notes: get("notes"),
-  };
-}
 
 export async function createConnection(
   _previousState: CreateConnectionState,
   formData: FormData,
 ): Promise<CreateConnectionState> {
-  const values = readForm(formData);
+  const values = readConnectionFormValues(formData);
 
   const input = normalizeConnectionInput({
     name: values.name,

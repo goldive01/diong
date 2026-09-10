@@ -8,7 +8,6 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { createConnection } from "@/app/(protected)/connections/actions";
 import {
   EMPTY_CONNECTION_FORM,
   type ConnectionFormValues,
@@ -27,6 +26,7 @@ import {
   CONNECTION_PURPOSE_LABEL,
   CONNECTION_TYPE_LABEL,
   CONTACT_RHYTHM_OPTIONS,
+  describeContactRhythm,
 } from "@/src/lib/connections/connection-labels";
 import {
   CONNECTION_PURPOSES,
@@ -45,15 +45,43 @@ const FIELD_ORDER: ConnectionField[] = [
   "notes",
 ];
 
+type ConnectionFormAction = (
+  state: CreateConnectionState,
+  formData: FormData,
+) => Promise<CreateConnectionState>;
+
 export function ConnectionForm({
+  action,
   initialValues = EMPTY_CONNECTION_FORM,
+  submitLabel = "Save connection",
+  pendingLabel = "Saving…",
+  cancelHref = "/connections",
 }: {
+  action: ConnectionFormAction;
   initialValues?: ConnectionFormValues;
+  submitLabel?: string;
+  pendingLabel?: string;
+  cancelHref?: string;
 }) {
-  const [state, formAction, pending] = useActionState(
-    createConnection,
-    initialState,
-  );
+  const [state, formAction, pending] = useActionState(action, initialState);
+
+  // Keep an existing custom rhythm selectable when editing a connection whose
+  // preferred_contact_days is not one of the preset choices.
+  const rhythmOptions =
+    initialValues.preferredContactDays !== "" &&
+    !CONTACT_RHYTHM_OPTIONS.some(
+      (option) => option.value === initialValues.preferredContactDays,
+    )
+      ? [
+          ...CONTACT_RHYTHM_OPTIONS,
+          {
+            value: initialValues.preferredContactDays,
+            label: describeContactRhythm(
+              Number(initialValues.preferredContactDays),
+            ),
+          },
+        ]
+      : CONTACT_RHYTHM_OPTIONS;
   const [values, setValues] = useState<ConnectionFormValues>(initialValues);
   const [clientErrors, setClientErrors] = useState<ConnectionErrors>({});
   const [dismissals, setDismissals] = useState<{
@@ -253,7 +281,7 @@ export function ConnectionForm({
           aria-describedby="preferredContactDays-help preferredContactDays-error"
           className="mt-2 min-h-12 w-full rounded-xl border border-[#cfc8bb] bg-white px-4 font-normal outline-none focus:border-[#6f7b4f] focus:ring-2 focus:ring-[#6f7b4f]/20"
         >
-          {CONTACT_RHYTHM_OPTIONS.map((option) => (
+          {rhythmOptions.map((option) => (
             <option key={option.value || "none"} value={option.value}>
               {option.label}
             </option>
@@ -308,10 +336,10 @@ export function ConnectionForm({
           disabled={pending}
           className="min-h-12 rounded-full bg-[#263b2d] px-6 font-semibold text-white hover:bg-[#1d3024] disabled:cursor-wait disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Save connection"}
+          {pending ? pendingLabel : submitLabel}
         </button>
         <Link
-          href="/connections"
+          href={cancelHref}
           className="min-h-12 rounded-full px-4 py-3 font-semibold text-[#4d574f] hover:underline"
         >
           Cancel
