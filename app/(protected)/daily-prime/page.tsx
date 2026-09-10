@@ -1,10 +1,18 @@
+import Link from "next/link";
 import { DailyPrimeCard } from "@/src/components/prime/daily-prime-card";
+import { PrimeReflectionForm } from "@/src/components/prime/prime-reflection-form";
 import { requireCompletedProfile } from "@/src/lib/auth";
-import { getDailyPrime } from "@/src/lib/prime-data";
+import { getDailyPrime, getPrimeReflection } from "@/src/lib/prime-data";
+import { savePrimeReflection } from "@/app/(protected)/daily-prime/actions";
+import { DEFAULT_REFLECTION_PROMPT } from "@/src/lib/prime-reflection";
 
 export default async function DailyPrimePage() {
-  const { supabase, profile } = await requireCompletedProfile();
+  const { supabase, userId, profile } = await requireCompletedProfile();
   const result = await getDailyPrime(supabase);
+  const reflection =
+    result.status === "ready" && result.prime.completed_at
+      ? await getPrimeReflection(supabase, userId, result.prime.assignment_id)
+      : null;
   const today = new Intl.DateTimeFormat("en-GB", {
     weekday: "long",
     day: "numeric",
@@ -24,10 +32,25 @@ export default async function DailyPrimePage() {
           A focused prompt for attention, reflection and purposeful action,
           chosen for {profile.display_name}.
         </p>
+        <Link
+          href="/daily-prime/history"
+          className="mt-4 inline-block text-sm font-semibold text-[#59654a] hover:underline"
+        >
+          View Prime history
+        </Link>
       </header>
 
       {result.status === "ready" ? (
-        <DailyPrimeCard prime={result.prime} />
+        <div className="space-y-8">
+          <DailyPrimeCard prime={result.prime} />
+          {result.prime.completed_at && (
+            <PrimeReflectionForm
+              action={savePrimeReflection.bind(null, result.prime.assignment_id)}
+              prompt={result.prime.reflection_prompt ?? DEFAULT_REFLECTION_PROMPT}
+              initialReflection={reflection ?? ""}
+            />
+          )}
+        </div>
       ) : (
         <section
           role={result.status === "error" ? "alert" : "status"}

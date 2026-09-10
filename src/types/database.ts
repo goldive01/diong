@@ -75,6 +75,7 @@ export type PrimeCompletion = {
   completion_date: string;
   completed_at: string;
   note: string | null;
+  reflection: string | null;
 };
 
 export type DailyPrime = {
@@ -300,6 +301,10 @@ export type Database = {
       };
       complete_daily_prime: {
         Args: { p_assignment_id: number };
+        Returns: string;
+      };
+      save_prime_reflection: {
+        Args: { p_assignment_id: number; p_reflection: string | null };
         Returns: string;
       };
       record_connection_interaction: {
