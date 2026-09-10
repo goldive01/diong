@@ -133,14 +133,25 @@ export async function getConnection(
 export async function getConnectionNudges(
   supabase: SupabaseClient<Database>,
 ): Promise<ConnectionNudge[]> {
-  const { data, error } = await supabase.rpc("get_connection_nudges");
+  try {
+    const { data, error } = await supabase.rpc("get_connection_nudges");
 
-  if (error) {
-    console.error("Unable to load connection nudges:", error.message);
+    if (error) {
+      console.error("Unable to load connection nudges:", error.message);
+      return [];
+    }
+
+    return data ?? [];
+  } catch (cause) {
+    // A thrown error (transport failure, unexpected client state) must not break
+    // any page that surfaces nudges — /home included. Callers treat [] as
+    // "nothing to act on".
+    console.error(
+      "Unable to load connection nudges:",
+      cause instanceof Error ? cause.message : cause,
+    );
     return [];
   }
-
-  return data ?? [];
 }
 
 /**

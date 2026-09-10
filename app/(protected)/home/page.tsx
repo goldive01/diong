@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { requireCompletedProfile } from "@/src/lib/auth";
 import { getInterestNames } from "@/src/lib/profile-data";
+import { getTopConnectionNudge } from "@/src/lib/connections/connections-data";
+import { HomeConnectionNudge } from "@/src/components/connections/home-connection-nudge";
 
 export default async function HomePage() {
   const { supabase, userId, profile } = await requireCompletedProfile();
-  const interestNames = await getInterestNames(supabase, userId);
+  const [interestNames, connectionNudge] = await Promise.all([
+    getInterestNames(supabase, userId),
+    getTopConnectionNudge(supabase),
+  ]);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-14">
@@ -25,6 +30,10 @@ export default async function HomePage() {
             {interestNames.map((name) => <li key={name} className="rounded-full bg-white px-3 py-1.5 text-sm font-medium">{name}</li>)}
           </ul>
         </aside>
+      </section>
+
+      <section className="mt-6" aria-label="Connections">
+        <HomeConnectionNudge nudge={connectionNudge} />
       </section>
     </main>
   );

@@ -496,6 +496,57 @@ not a status.
 - `src/components/connections/connection-card.tsx` — the whole card links to
   `/connections/[id]`.
 
+## Phase F: Home Connections Prompt
+
+Phase F surfaces **one** calm Connections prompt on the protected `/home` page,
+beneath the Daily Prime content. No schema, RPC, `src/types/database.ts`, Daily
+Prime, AI or third-party changes. No new route.
+
+| File | Change |
+| --- | --- |
+| `app/(protected)/home/page.tsx` | Loads `getTopConnectionNudge(supabase)` alongside the existing interests query (`Promise.all`) and renders `<HomeConnectionNudge>` in a new `<section>` after the Daily Prime / interests grid. |
+| `src/components/connections/home-connection-nudge.tsx` | New server component. Renders the actionable card or the restrained no-action state. No `"use client"`. |
+| `src/lib/connections/connection-labels.ts` | Added `nudgeReconnectPrompt(status)` — pure, deterministic one-line context copy keyed by the SQL nudge status (`""` for `up_to_date`). |
+| `src/lib/connections/connections-data.ts` | `getConnectionNudges()` now wraps the RPC call in `try/catch` as well as checking `error`, so a thrown transport failure returns `[]` instead of breaking any page that surfaces nudges. |
+| `src/lib/connections/connection-labels.test.ts` | Added focused tests for `nudgeReconnectPrompt`. |
+
+### Data flow
+
+`/home` (server) → `getTopConnectionNudge(supabase)` → `getConnectionNudges()` →
+`supabase.rpc("get_connection_nudges")`. The RPC returns rows already ordered
+`due`, `never_contacted`, `approaching`, `up_to_date`; `getTopConnectionNudge`
+returns the first row whose status is not `up_to_date`, or `null`. The nudge
+algorithm and ordering stay entirely in SQL — nothing is re-scored or re-sorted
+in TypeScript or React.
+
+### Actionable state
+
+When `getTopConnectionNudge` returns a nudge, the card shows: the `CONNECTION`
+label, `Connection worth revisiting`, the connection name, `Type · Purpose`, the
+`nudgeReconnectPrompt` line, a plain last-contact line
+(`describeLastMeaningfulContact`), the deterministic `suggestedConnectionAction`,
+and a `View connection` button linking to `/connections/[id]`.
+
+### No-action state
+
+When it returns `null` (nothing actionable, no connections, or the nudge query
+failed): `Connections` / `Your important connections are up to date.` with a
+`View all connections` link to `/connections`. No fake activity, no counts.
+
+### Authorization / privacy
+
+`/home` stays protected by `requireCompletedProfile()`. `get_connection_nudges()`
+is `SECURITY DEFINER` and filters on `auth.uid()`, so only the signed-in user's
+own active connections are ever considered. The card never renders `notes`,
+`why_it_matters` or interaction history — only the minimal nudge fields.
+
+### Failure handling
+
+The nudge path never throws to the page: `getConnectionNudges()` catches both a
+returned `error` and a thrown exception, logs it server-side with `console.error`,
+and returns `[]`. `getTopConnectionNudge` then returns `null` and `/home` renders
+the calm no-action state. No raw Supabase/Postgres text reaches the browser.
+
 ## Phase E Manual Verification
 
 No database changes. Sign in as a completed-onboarding user with at least one

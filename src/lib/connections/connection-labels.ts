@@ -54,6 +54,26 @@ export const NUDGE_STATUS_LABEL: Record<ConnectionNudgeStatus, string> = {
   never_contacted: "Not yet connected",
 };
 
+// A calm, one-line reason a connection is being surfaced on /home. Keyed by the
+// SQL-calculated nudge status. Empty string for "up_to_date" so callers render
+// nothing. Deliberately gentle: it invites, never nags.
+const NUDGE_RECONNECT_PROMPT: Record<ConnectionNudgeStatus, string> = {
+  due: "It may be a good time to reconnect.",
+  approaching: "You are approaching the rhythm you set for staying in touch.",
+  never_contacted:
+    "You have not recorded a meaningful contact with this person yet.",
+  up_to_date: "",
+};
+
+/**
+ * Calm one-line context for why a connection nudge is worth revisiting. Pure and
+ * deterministic. Returns "" for an up-to-date connection so the caller can skip
+ * rendering it. The status itself is calculated in SQL, never here.
+ */
+export function nudgeReconnectPrompt(status: ConnectionNudgeStatus): string {
+  return NUDGE_RECONNECT_PROMPT[status];
+}
+
 const SUGGESTED_ACTION_BY_TYPE: Record<ConnectionType, string> = {
   friend: "Check in with someone you value but have not spoken to recently.",
   family: "Make intentional time to reconnect with a family member.",

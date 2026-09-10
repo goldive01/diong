@@ -9,6 +9,7 @@ import {
   formatInteractionMoment,
   INTERACTION_TYPE_LABEL,
   NUDGE_STATUS_LABEL,
+  nudgeReconnectPrompt,
   suggestedConnectionAction,
 } from "./connection-labels";
 import {
@@ -133,6 +134,24 @@ describe("suggestedConnectionAction", () => {
       status: "due",
     });
     expect(first).toBe(second);
+  });
+});
+
+describe("nudgeReconnectPrompt", () => {
+  it("returns non-empty, clean copy for every actionable status", () => {
+    for (const status of ACTIONABLE_STATUSES) {
+      const prompt = nudgeReconnectPrompt(status);
+      expect(prompt.length, status).toBeGreaterThan(0);
+      assertClean(prompt);
+    }
+  });
+
+  it("returns no prompt for an up-to-date connection", () => {
+    expect(nudgeReconnectPrompt("up_to_date")).toBe("");
+  });
+
+  it("is deterministic", () => {
+    expect(nudgeReconnectPrompt("due")).toBe(nudgeReconnectPrompt("due"));
   });
 });
 
