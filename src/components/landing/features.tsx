@@ -1,33 +1,33 @@
 const features = [
   {
-    title: "Daily Prime Protocols",
+    title: "Daily Prime",
     description:
-      "Structured prompts for attention, reflection, motivation, habits and purposeful action.",
+      "A short, structured prompt each day for attention, reflection, motivation, habits and purposeful action.",
   },
   {
-    title: "Goals",
+    title: "Action Trigger",
     description:
-      "Create clear directions and keep your next action close enough to begin.",
+      "One concrete, achievable action to complete that day. Progress over intention, and no pressure to do everything.",
   },
   {
-    title: "Habit tracking",
+    title: "Reflection",
     description:
-      "Build consistency through simple routines that are easy to return to.",
+      "A private space to note what you noticed after the day's practice. Only you can see it.",
   },
   {
-    title: "Private journal",
+    title: "History and progress",
     description:
-      "Reflect on decisions, progress and lessons in a personal writing space.",
+      "Look back over every Prime you have been assigned, your completion rate and your simple day streaks.",
   },
   {
-    title: "Progress streaks",
+    title: "Intentional Connections",
     description:
-      "Measure follow-through and momentum without turning growth into pressure.",
+      "Keep track of the friends, family, mentors and collaborators who matter to your growth, and notice when it may be time to reconnect.",
   },
   {
-    title: "Supportive community",
+    title: "Chosen for you",
     description:
-      "Share selected progress and encourage others inside a purposeful environment.",
+      "The interests you pick during onboarding shape which Primes you are most likely to receive.",
   },
 ];
 
@@ -37,10 +37,10 @@ export function Features() {
       <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-6 lg:px-8 lg:py-24">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#6f7b4f]">
-            Features
+            What Diong gives you
           </p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-[#1d2420] sm:text-4xl">
-            The essentials for a consistent personal growth routine.
+            A calm, structured routine for turning intention into progress.
           </h2>
         </div>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,4 +1,3 @@
-import { CommunityPreview } from "@/src/components/landing/community-preview";
 import { Features } from "@/src/components/landing/features";
 import { FinalCta } from "@/src/components/landing/final-cta";
 import { Footer } from "@/src/components/landing/footer";
@@ -11,7 +10,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-[#1d2420]">
       <Navbar />
-      <main>
+      <main id="main-content" tabIndex={-1} className="focus:outline-none">
         <Hero />
         <HowItWorks />
         <Features />
@@ -29,7 +28,6 @@ export default function Home() {
           </div>
           <PrimeProtocolCard />
         </section>
-        <CommunityPreview />
         <FinalCta />
       </main>
       <Footer />

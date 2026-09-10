@@ -1,9 +1,9 @@
 const steps = [
-  "Choose your direction.",
-  "Receive a daily Prime Protocol.",
-  "Complete one focused Action Trigger.",
-  "Reflect and track your progress.",
-  "Grow with a supportive community.",
+  "Choose your direction during a short onboarding.",
+  "Open your Daily Prime — one structured prompt, chosen for you.",
+  "Complete the day's Action Trigger.",
+  "Write a short reflection on what you noticed.",
+  "Review your history, progress and the connections worth revisiting.",
 ];
 
 export function HowItWorks() {

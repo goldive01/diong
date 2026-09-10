@@ -115,7 +115,11 @@ export function OnboardingForm({ interests, initialValues }: OnboardingFormProps
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f4ee] px-5 py-8 text-[#1d2420] sm:py-12">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="min-h-screen bg-[#f7f4ee] px-5 py-8 text-[#1d2420] focus:outline-none sm:py-12"
+    >
       <div className="mx-auto max-w-3xl">
         <header className="mb-8">
           <p className="font-bold tracking-tight">Diong</p>
@@ -163,7 +167,7 @@ export function OnboardingForm({ interests, initialValues }: OnboardingFormProps
           {stage === 2 && (
             <section aria-labelledby="direction-title">
               <h1 id="direction-title" className="text-3xl font-semibold tracking-tight">Your direction</h1>
-              <p className="mt-2 max-w-2xl text-[#5f6962]">Choose 1–5 interests. Later, these will help Diong choose Prime Protocols that are relevant to what you want to work on.</p>
+              <p className="mt-2 max-w-2xl text-[#5f6962]">Choose 1–5 interests. Diong uses these to choose Prime Protocols that are relevant to what you want to work on.</p>
               <p className="mt-4 text-sm font-semibold">{values.interestIds.length} of 5 selected</p>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {interests.map((interest) => {
@@ -189,7 +193,7 @@ export function OnboardingForm({ interests, initialValues }: OnboardingFormProps
                 <div><dt className="text-xs font-semibold uppercase tracking-wider text-[#69726c]">Username</dt><dd className="mt-1 font-semibold">@{normalizeUsername(values.username)}</dd></div>
                 <div><dt className="text-xs font-semibold uppercase tracking-wider text-[#69726c]">Interests</dt><dd className="mt-2 flex flex-wrap gap-2">{selectedInterests.map((interest) => <span key={interest.id} className="rounded-full bg-white px-3 py-1 text-sm">{interest.name}</span>)}</dd></div>
               </dl>
-              <p className="mt-6 leading-7 text-[#59635c]">Next, you’ll arrive at your personal home. Daily Prime will be introduced in the next phase.</p>
+              <p className="mt-6 leading-7 text-[#59635c]">Next, you’ll arrive at your personal home, where your first Daily Prime is waiting.</p>
             </section>
           )}
 

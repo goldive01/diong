@@ -25,7 +25,11 @@ export function AuthForm({ action, mode }: AuthFormProps) {
   const needsPassword = mode === "login" || mode === "register" || mode === "reset";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f7f4ee] px-5 py-12 text-[#1d2420]">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="flex min-h-screen items-center justify-center bg-[#f7f4ee] px-5 py-12 text-[#1d2420] focus:outline-none"
+    >
       <section className="w-full max-w-md rounded-3xl border border-[#ded7c9] bg-white p-6 shadow-sm sm:p-8">
         <Link href="/" className="text-lg font-bold tracking-tight">Diong</Link>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight">{details.title}</h1>
@@ -57,13 +61,33 @@ export function AuthForm({ action, mode }: AuthFormProps) {
             </label>
           )}
           {state.message && (
-            <p role="status" className={`rounded-xl px-4 py-3 text-sm ${state.success ? "bg-[#eef2e5] text-[#44512e]" : "bg-[#fff0ed] text-[#8c3527]"}`}>
+            <p
+              role={state.success ? "status" : "alert"}
+              className={`rounded-xl px-4 py-3 text-sm ${state.success ? "bg-[#eef2e5] text-[#44512e]" : "bg-[#fff0ed] text-[#8c3527]"}`}
+            >
               {state.message}
             </p>
           )}
-          <button disabled={pending} className="min-h-12 w-full rounded-full bg-[#1d2420] px-5 font-semibold text-white transition hover:bg-[#2f3a34] disabled:cursor-wait disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={pending}
+            className="min-h-12 w-full rounded-full bg-[#1d2420] px-5 font-semibold text-white transition hover:bg-[#2f3a34] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d2420] focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-wait disabled:opacity-60"
+          >
             {pending ? "Please wait…" : details.submit}
           </button>
+          {mode === "register" && (
+            <p className="text-xs leading-5 text-[#69726c]">
+              By creating an account you agree to Diong&apos;s{" "}
+              <Link href="/terms" className="font-semibold text-[#59654a] hover:underline">
+                Terms of Use
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="font-semibold text-[#59654a] hover:underline">
+                Privacy Notice
+              </Link>
+              .
+            </p>
+          )}
         </form>
         <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-[#56604f]">
           {mode !== "login" && <Link href="/login">Log in</Link>}

@@ -14,13 +14,13 @@ export function Hero() {
             Prime your mind. Act on your goals. Become more.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-[#4f5b53] sm:text-xl">
-            Diong combines structured daily priming, meaningful action, goal
-            tracking, journaling and community support to help people build
-            consistent personal growth routines.
+            Diong gives you a calm daily practice: one structured Prime, a single
+            focused Action Trigger and a short reflection — plus a private space
+            for the connections that matter to your growth.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
-              href="#start"
+              href="/register"
               className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#1d2420] px-7 text-base font-semibold text-white shadow-lg shadow-[#1d2420]/20 transition hover:bg-[#2f3a34] focus:outline-none focus:ring-2 focus:ring-[#1d2420] focus:ring-offset-2 focus:ring-offset-[#f7f4ee]"
             >
               Start free

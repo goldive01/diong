@@ -6,7 +6,9 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-[#1d2420]">
       <AppHeader />
-      {children}
+      <div id="main-content" tabIndex={-1} className="focus:outline-none">
+        {children}
+      </div>
     </div>
   );
 }

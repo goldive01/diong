@@ -1,4 +1,10 @@
-const footerLinks = ["About", "How it works", "Privacy", "Terms", "Contact"];
+import Link from "next/link";
+
+const footerLinks = [
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/terms" },
+];
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -11,13 +17,13 @@ export function Footer() {
         </p>
         <nav aria-label="Footer navigation" className="flex flex-wrap gap-4">
           {footerLinks.map((link) => (
-            <a
-              key={link}
-              href={link === "How it works" ? "#how-it-works" : "#"}
+            <Link
+              key={link.href}
+              href={link.href}
               className="text-sm font-medium text-[#4b554d] transition hover:text-[#1d2420]"
             >
-              {link}
-            </a>
+              {link.label}
+            </Link>
           ))}
         </nav>
       </div>

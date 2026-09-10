@@ -1,36 +1,153 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Diong
 
-## Getting Started
+**Prime your mind. Act on your goals. Become more.**
 
-First, run the development server:
+Diong is a calm, structured personal-development web application. It gives you a
+daily practice — one structured Prime, a single focused Action Trigger and a
+short reflection — together with a personal history and progress view and a
+private space for the connections that matter to your growth.
+
+Diong is a tool for attention, reflection, motivation, habits and purposeful
+action. It does not provide medical, psychological or other professional advice
+and makes no guaranteed-outcome claims.
+
+## V1 capabilities
+
+- Email registration, login, password reset, logout (Supabase Auth).
+- Onboarding: username, display name, optional bio, and 1–5 growth interests.
+- Authenticated app shell with a personal home dashboard.
+- **Daily Prime** — one Prime Protocol assigned per user per day, weighted by
+  your interests.
+- **Action Trigger completion** — mark the day's action done (no duplicate
+  completions).
+- **Reflection** — an optional private note against today's completed Prime,
+  editable the same day.
+- **Prime history** — every assigned Prime, newest first.
+- **Prime detail** — a read-only view of any past Prime and its saved reflection.
+- **Prime progress** — real counts: Prime days, completed, completion rate, and
+  simple current / longest day streaks.
+- **Connections** — track the people who matter to your growth (friends, family,
+  mentors, accountability partners, colleagues, collaborators, study partners
+  and other important people): create, edit, record interactions, view history,
+  deactivate / reactivate, and a home nudge for the connection most worth
+  revisiting.
+- Authenticated-visible public profile pages.
+- Profile settings (username, display name, bio).
+- Privacy Notice and Terms of Use.
+- Branded 404, error boundaries and route-transition loading states.
+
+## Tech stack
+
+- Next.js (App Router) + React + TypeScript
+- Tailwind CSS v4
+- Supabase — PostgreSQL, Authentication, Storage
+- Vitest (unit tests for pure logic)
+- Deployed on Vercel
+
+## Local requirements
+
+- **Node.js 22 or later** (see `.nvmrc`; `nvm use` picks it up).
+- npm (bundled with Node).
+- A Supabase project (free tier is fine) for local development.
+
+## Installation
+
+```bash
+git clone <repo-url>
+cd diong
+npm install
+```
+
+## Environment setup
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in from your Supabase project (**Project Settings → API**):
+
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL, e.g. `https://your-ref.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable ("anon") key |
+
+Both are public by design. Diong never uses the service-role key.
+
+## Supabase / database
+
+Apply the migrations in `supabase/migrations/` **in filename order** against the
+target project — with the Supabase CLI (`supabase db push`) or by pasting each
+file into the SQL Editor once, in order:
+
+1. `202607190001_onboarding_and_profiles.sql`
+2. `202607270001_prime_protocol_engine.sql`
+3. `202609060001_connections.sql`
+4. `202609060002_connection_rpcs.sql`
+5. `202609080001_fix_daily_prime_assigned_date.sql`
+6. `202609100001_prime_reflections.sql`
+
+Each file is a single transaction and is **not** idempotent — never re-run a
+migration that already succeeded. Migrations 2–6 depend on earlier ones. Row
+Level Security is enabled on every user-owned table; all writes go through
+column-scoped grants or `SECURITY DEFINER` RPCs.
+
+## npm scripts
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the dev server on `http://localhost:3000` |
+| `npm run build` | Production build |
+| `npm start` | Serve the production build |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest (pure-logic unit tests) |
+
+## Development run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tests
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm test
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Vitest covers pure application logic only (validation, labels, history/progress
+helpers). The SQL nudge and assignment engines are verified by the SQL in
+`docs/CONNECTIONS_SETUP.md` and `docs/DAILY_PRIME_HISTORY.md`.
 
-## Learn More
+## Production build
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build && npm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Deployment steps, environment configuration and Supabase Auth setup are in
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). The launch checklist is
+[`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Privacy
 
-## Deploy on Vercel
+Your Daily Prime reflections, your Connections and your private connection notes
+are visible only to you. Your profile (display name, username, optional bio and
+interest names) is visible to other signed-in users. See
+[`/privacy`](app/privacy/page.tsx) and [`/terms`](app/terms/page.tsx).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deferred to V1.1
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Not in V1: standalone Goals, standalone Habits, a standalone Journal, a
+community / social feed, notifications, an AI Coach, Google integrations,
+payments, and a native mobile app. These are planned for later releases and are
+not advertised as available.
+
+## Documentation
+
+- `docs/PRODUCT.md`, `docs/MVP.md`, `docs/ROADMAP.md` — product scope
+- `docs/DATA_MODEL.md` — data model
+- `docs/ROUTES.md` — routes (shipped and planned)
+- `docs/CONNECTIONS_SETUP.md` — Connections schema, RPCs, verification
+- `docs/DAILY_PRIME_HISTORY.md` — Prime reflections / history / progress
+- `docs/DEPLOYMENT.md` — deployment
+- `docs/RELEASE_CHECKLIST.md` — launch checklist
+- `DIONG_V1_RELEASE_PLAN.md` — V1 completion plan

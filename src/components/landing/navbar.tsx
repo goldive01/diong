@@ -2,7 +2,6 @@ const navigationItems = [
   { label: "How it works", href: "#how-it-works" },
   { label: "Features", href: "#features" },
   { label: "Prime Protocol", href: "#prime-protocol" },
-  { label: "Community", href: "#community" },
 ];
 
 export function Navbar() {
