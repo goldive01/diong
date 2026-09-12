@@ -201,11 +201,32 @@ This document describes the Diong data model. Phase 3 tables are implemented by 
   trigger deletes any follow edge in either direction. Writes are RPC-only
   (`block_user` / `unblock_user`).
 
-## notifications
+## notifications (implemented)
 
-- Purpose: Store basic in-app notifications.
-- Important fields: `id`, `user_id`, `actor_user_id`, `type`, `post_id`, `comment_id`, `read_at`, `created_at`.
-- Relationship to users: Notification belongs to recipient user; optional actor user and related content.
-- Privacy requirements: Readable only by recipient; must not expose private journal, goal, habit, or completion data.
-- Useful indexes: `user_id`; `(user_id, read_at)`; `created_at`.
-- Validation rules: Type from allowed values; related content must match notification type; recipient cannot be null.
+- Implemented by
+  `supabase/migrations/202609100004_notifications_discover_search.sql`
+  (Social Network Pass 3). See `docs/NOTIFICATIONS_DISCOVER_SEARCH.md`.
+- Purpose: Store in-app notifications for new followers, post likes, post
+  comments and comment replies.
+- Fields: `id`, `user_id`, `actor_user_id`, `notification_type`,
+  `entity_type`, `entity_id`, `read_at`, `created_at`.
+- Relationship to users: `user_id → auth.users` (cascade, the recipient),
+  `actor_user_id → auth.users` (`on delete set null`, the account whose
+  action produced the notification). Not client-writable — rows are created
+  only by `AFTER INSERT` triggers on `follows` / `post_likes` /
+  `post_comments`.
+- Privacy: Readable only by the recipient (RLS `user_id = auth.uid()`). A
+  notification whose actor is now blocked in either direction is hidden
+  entirely by the read RPCs; a notification whose target was later
+  soft-deleted is still shown (the sentence never contains post/comment
+  body) but its link becomes non-navigable. Never exposes private journal,
+  goal, habit, Connections or Prime-reflection data — none of that exists as
+  a notification source.
+- Indexes: `(user_id, created_at desc)`; `(user_id, read_at, created_at
+  desc)`; `(actor_user_id)`.
+- Validation: `notification_type` / `entity_type` CHECKed against fixed
+  lists; a combined CHECK ties each type to its exact entity shape; actor can
+  never equal recipient. `entity_id` is intentionally not foreign-keyed
+  (polymorphic across posts/comments — see the doc). Writes are trigger- and
+  RPC-only (`mark_notification_read` / `mark_all_notifications_read` for read
+  state; no client insert/update/delete grant exists at all).

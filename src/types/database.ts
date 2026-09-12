@@ -309,6 +309,63 @@ export type PostEngagementRow = {
   viewer_bookmarked: boolean;
 };
 
+// ---------------------------------------------------------------------------
+// Notifications / Discover / Search — Social Network Pass 3
+// ---------------------------------------------------------------------------
+
+export type NotificationType =
+  | "new_follower"
+  | "post_like"
+  | "post_comment"
+  | "comment_reply";
+
+export type NotificationEntityType = "profile" | "post" | "comment";
+
+export type Notification = {
+  id: number;
+  user_id: string;
+  actor_user_id: string | null;
+  notification_type: NotificationType;
+  entity_type: NotificationEntityType | null;
+  entity_id: number | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+// Row shape returned by public.list_notifications(). actor_username /
+// actor_display_name are null when the actor's account no longer exists.
+// target_post_id / target_available are resolved server-side (block-aware,
+// deleted-content-aware) — see docs/NOTIFICATIONS_DISCOVER_SEARCH.md.
+export type NotificationRow = {
+  id: number;
+  notification_type: NotificationType;
+  entity_type: NotificationEntityType | null;
+  entity_id: number | null;
+  actor_user_id: string | null;
+  actor_username: string | null;
+  actor_display_name: string | null;
+  target_post_id: number | null;
+  target_available: boolean;
+  read_at: string | null;
+  created_at: string;
+};
+
+// Row shape shared by discover_people() / search_people(). viewer_follows is
+// always false from discover_people() (it already excludes anyone the viewer
+// follows) but real per-row state from search_people(), which does not.
+export type DiscoverPersonRow = {
+  id: string;
+  username: string;
+  display_name: string;
+  bio: string | null;
+  viewer_follows: boolean;
+  total_count: number;
+};
+
+export type DiscoverPeopleRow = DiscoverPersonRow & {
+  shared_interest_count: number;
+};
+
 type TableDefinition<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -455,6 +512,15 @@ export type Database = {
         Record<string, never>,
         Record<string, never>
       >;
+      notifications: TableDefinition<
+        Notification,
+        // Read-only for clients. Rows are created only by the
+        // notify_new_follower() / notify_post_like() / notify_post_comment()
+        // triggers, and changed only by mark_notification_read() /
+        // mark_all_notifications_read().
+        Record<string, never>,
+        Record<string, never>
+      >;
     };
     Views: Record<string, never>;
     Functions: {
@@ -592,6 +658,51 @@ export type Database = {
       remove_bookmark: {
         Args: { p_post_id: number };
         Returns: undefined;
+      };
+      list_notifications: {
+        Args: {
+          p_before_created_at?: string | null;
+          p_before_id?: number | null;
+          p_limit?: number;
+        };
+        Returns: NotificationRow[];
+      };
+      get_unread_notification_count: {
+        Args: Record<never, never>;
+        Returns: number;
+      };
+      mark_notification_read: {
+        Args: { p_notification_id: number };
+        Returns: undefined;
+      };
+      mark_all_notifications_read: {
+        Args: Record<never, never>;
+        Returns: undefined;
+      };
+      discover_people: {
+        Args: { p_limit?: number; p_offset?: number };
+        Returns: DiscoverPeopleRow[];
+      };
+      list_discover_posts: {
+        Args: {
+          p_before_created_at?: string | null;
+          p_before_id?: number | null;
+          p_limit?: number;
+        };
+        Returns: FeedPostRow[];
+      };
+      search_people: {
+        Args: { p_query: string; p_limit?: number; p_offset?: number };
+        Returns: DiscoverPersonRow[];
+      };
+      search_posts: {
+        Args: {
+          p_query: string;
+          p_before_created_at?: string | null;
+          p_before_id?: number | null;
+          p_limit?: number;
+        };
+        Returns: FeedPostRow[];
       };
     };
     Enums: Record<string, never>;

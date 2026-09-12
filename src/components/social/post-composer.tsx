@@ -6,7 +6,6 @@ import { createPost } from "@/app/(protected)/feed/actions";
 import {
   EMPTY_POST_FORM,
   initialPostFormState,
-  type PostFormState,
 } from "@/src/lib/social/post-form-state";
 import {
   POST_BODY_MAX,
@@ -27,17 +26,28 @@ export function PostComposer() {
     initialPostFormState(),
   );
   const [values, setValues] = useState(EMPTY_POST_FORM);
-  const [handled, setHandled] = useState<PostFormState | null>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
-  // Clear the body once after a successful share (render-time state adjustment,
-  // React's supported pattern).
-  if (state !== handled) {
-    setHandled(state);
+  // Clear the body once per successful share. Keyed only on `state` (the
+  // useActionState result), so this only re-runs when a *new* action result
+  // arrives — never on an unrelated re-render such as typing in another
+  // field — which is what makes this safe: there is no dependency that
+  // changes as a consequence of this effect running, so it cannot cascade.
+  // react-hooks/set-state-in-effect flags any setState call inside an effect
+  // on principle (a React Compiler-era rule that also fires through an Effect
+  // Event wrapper), but "clear a form after a successful submit" has no
+  // render-time derivation to fall back to — `values.body` must stay ordinary,
+  // user-editable local state after the reset. This is the documented,
+  // narrow exception, not the render-time-adjustment anti-pattern this file
+  // used to have (which updated two state variables unconditionally inside
+  // the render body itself).
+  /* eslint-disable react-hooks/set-state-in-effect -- see comment above */
+  useEffect(() => {
     if (state.status === "success") {
       setValues((current) => ({ ...current, body: "" }));
     }
-  }
+  }, [state]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (state.status === "error" && state.errors.body) {

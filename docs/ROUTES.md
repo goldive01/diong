@@ -29,6 +29,10 @@
 | `/profile/[username]/followers` | Protected, onboarding required | Paginated list of accounts following the owner. | Open a person's profile; page through. | "No followers yet." | Unknown / incomplete username, or owner has blocked the viewer → branded 404; viewer has blocked the owner → "list hidden" notice. |
 | `/profile/[username]/following` | Protected, onboarding required | Paginated list of accounts the owner follows. | Open a person's profile; page through. | "Not following anyone yet." | Same as `/followers`. |
 | `/settings/profile` | Protected, onboarding required | Update the owner's public profile. | Update username, display name, bio. | Existing profile values. | Field and form save errors. |
+| `/notifications` | Protected, onboarding required | The viewer's notifications (new followers, likes, comments, replies), newest first. | Open a notification (marks it read, redirects to its target); mark all read; **Load more**. | "Nothing yet." | A notification whose target was deleted or is blocked renders as plain, non-navigable text instead of erroring. |
+| `/notifications/open/[id]` | Protected, onboarding required | Route Handler (not a page): marks one notification read, then redirects to its target. | Not applicable. | Not applicable. | An invalid id or unrecognised `?to=` target redirects to `/notifications`. |
+| `/discover` | Protected, onboarding required | People to discover (not yet followed, not blocked) plus recent public posts. | Follow a suggested person; open a post; **Load more**. | "No new people to discover right now." / "No public posts yet." | Falls back to an empty list on a read error. |
+| `/search` | Protected, onboarding required | Global search across people (username / display name / bio) and posts (body) the viewer may see. | Submit a query; open a person or post; page through. | "No people found." / "No posts found." | A too-short query shows "Type at least 2 characters to search." instead of a false "no results". |
 
 Protected routes redirect unauthenticated users to `/login`. Authoritative
 checks run in server pages/layouts: incomplete users go to `/onboarding`,
@@ -48,7 +52,6 @@ authorization checks.
 | `/journal` | Standalone private journal entries. |
 | `/messages` | Direct messages. |
 | `/communities` | Topic communities. |
-| `/notifications` | Basic in-app notifications. |
 
 These are not built, not linked from the app, and not advertised as available.
 
@@ -56,5 +59,8 @@ Follow / block / follower lists ship in the **Social Network Pass 1** slice
 (`docs/SOCIAL_GRAPH_SETUP.md`). Posts, the feed, comments, likes and bookmarks
 ship in the **Social Network Pass 2** slice (`docs/SOCIAL_CONTENT.md`) —
 `/feed`, `/posts/[id]`, `/posts/[id]/edit` and `/saved` are listed under V1
-routes above. Direct messages, communities and notifications are **not** part of
-Pass 2.
+routes above. In-app notifications, Discover and global Search ship in the
+**Social Network Pass 3** slice (`docs/NOTIFICATIONS_DISCOVER_SEARCH.md`) —
+`/notifications`, `/notifications/open/[id]`, `/discover` and `/search` are
+listed under V1 routes above. Direct messages and communities are **not**
+part of Pass 3.

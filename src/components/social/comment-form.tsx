@@ -51,18 +51,33 @@ export function CommentForm({
     INITIAL_COMMENT_FORM_STATE,
   );
   const [body, setBody] = useState(initialBody);
-  const [handled, setHandled] = useState<CommentFormState | null>(null);
   const fieldRef = useRef<HTMLTextAreaElement>(null);
 
-  if (state !== handled) {
-    setHandled(state);
+  // Reacts to a new action result once, after commit — never during render.
+  // Deliberately keyed only on `state` (not on `compact` / `initialBody` /
+  // `onSuccess`), so it fires exactly once per new submission result and
+  // never on an unrelated re-render. `onSuccess` in particular is usually a
+  // fresh inline arrow function from the parent on every render (see
+  // comment-card.tsx), so including it here would defeat the whole point of
+  // the dependency array. Calling a parent's setState from inside this
+  // component's *render body* (the previous pattern) is exactly the kind of
+  // thing that can cascade into "too many re-renders" — deferring it to an
+  // effect, which only ever fires after commit in response to a genuine
+  // `state` change, removes that risk entirely.
+  // react-hooks/set-state-in-effect flags any setState call inside an effect
+  // on principle; this is the standard, narrow exception — "reset a
+  // controlled field after an action result changes" has no pure render-time
+  // derivation to fall back to.
+  /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect -- see comment above */
+  useEffect(() => {
     if (state.status === "success") {
       setBody(compact ? initialBody : "");
       onSuccess?.();
     } else if (state.status === "error" && state.body) {
       setBody(state.body);
     }
-  }
+  }, [state]);
+  /* eslint-enable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (autoFocus) fieldRef.current?.focus();

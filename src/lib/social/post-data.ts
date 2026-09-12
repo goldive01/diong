@@ -44,7 +44,10 @@ export type FeedPage = {
   nextCursor: string | null;
 };
 
-function mapPost(row: FeedPostRow): FeedPost {
+// Exported (additive, Pass 3) so Discover / Search can reuse the exact
+// FeedPostRow → FeedPost mapping instead of duplicating it — both
+// list_discover_posts() and search_posts() return the identical row shape.
+export function mapPost(row: FeedPostRow): FeedPost {
   return {
     id: row.id,
     authorId: row.user_id,
@@ -288,7 +291,8 @@ export async function getPostEngagement(
   }
 }
 
-function toPage(rows: FeedPostRow[], limit: number): FeedPage {
+// Exported (additive, Pass 3) — same reasoning as mapPost() above.
+export function toPage(rows: FeedPostRow[], limit: number): FeedPage {
   const posts = rows.map(mapPost);
   const last = rows[rows.length - 1];
   const nextCursor =
