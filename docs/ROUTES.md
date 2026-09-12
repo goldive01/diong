@@ -35,6 +35,11 @@
 | `/search` | Protected, onboarding required | Global search across people (username / display name / bio) and posts (body) the viewer may see. | Submit a query; open a person or post; page through. | "No people found." / "No posts found." | A too-short query shows "Type at least 2 characters to search." instead of a false "no results". |
 | `/messages` | Protected, onboarding required | Inbox: one row per direct conversation with at least one message, most recently active first. | Open a conversation; **Load more**. | "No conversations yet. Start one from someone's profile." | Falls back to an empty list on a read error. |
 | `/messages/[conversationId]` | Protected, onboarding required, members only | One 1-to-1 conversation: message history and the composer. Opening it marks it read. | Send a message; **Load earlier messages**. | "Say hello to \<name\>." when no message has been sent yet. | Missing / foreign id, non-member, or a block now standing between the two participants → branded 404. |
+| `/communities` | Protected, onboarding required | Communities the viewer has joined, plus active communities to discover. | Open a community; **Start a community**; page through each section. | "You have not joined a community yet." / "No new communities to discover right now." | Falls back to an empty list on a read error. |
+| `/communities/new` | Protected, onboarding required | Create a community. | Enter name, slug, optional description/rules; submit. Becomes owner automatically. | Not applicable. | Field + form errors; duplicate-slug message. |
+| `/communities/[slug]` | Protected, onboarding required | One community: description, rules, member count, owner, Join/Leave, and its post feed. | Join / Leave; share a post (members only); open Members / Moderation; **Report**; **Load more** posts. | "No posts yet." | Missing / inactive community → branded 404. |
+| `/communities/[slug]/members` | Protected, onboarding required | Paginated, role-ordered member list for one community. | Open a member's profile; page through. | "No members yet." | Missing / inactive community → branded 404. |
+| `/communities/[slug]/moderation` | Protected, owner or moderator only | Member management, bans, recent posts and the report queue for one community. | Promote / demote moderator; remove / ban / unban a member; remove a post from the community; page through members. | "No one is banned." / "No posts yet." / "No reports for this community." | Missing / inactive community, or viewer is not owner/moderator → branded 404 (same as a missing community — never reveals that a community exists but is off-limits). |
 
 Protected routes redirect unauthenticated users to `/login`. Authoritative
 checks run in server pages/layouts: incomplete users go to `/onboarding`,
@@ -52,7 +57,6 @@ authorization checks.
 | `/goals` | Personal goals — create, edit, complete, archive, delete, updates. |
 | `/habits` | Habits and streaks — create habits, log completions. |
 | `/journal` | Standalone private journal entries. |
-| `/communities` | Topic communities. |
 
 These are not built, not linked from the app, and not advertised as available.
 
@@ -65,5 +69,8 @@ routes above. In-app notifications, Discover and global Search ship in the
 `/notifications`, `/notifications/open/[id]`, `/discover` and `/search` are
 listed under V1 routes above. Secure private 1-to-1 direct messages ship in
 the **Social Network Pass 4** slice (`docs/DIRECT_MESSAGES.md`) — `/messages`
-and `/messages/[conversationId]` are listed under V1 routes above. Communities
-are **not** part of Pass 4.
+and `/messages/[conversationId]` are listed under V1 routes above. Public
+communities, community moderation and reporting ship in the **Social Network
+Pass 5** slice (`docs/COMMUNITIES_MODERATION.md`) — `/communities`,
+`/communities/new`, `/communities/[slug]`, `/communities/[slug]/members` and
+`/communities/[slug]/moderation` are listed under V1 routes above.

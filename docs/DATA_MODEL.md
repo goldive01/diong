@@ -230,3 +230,111 @@ This document describes the Diong data model. Phase 3 tables are implemented by 
   (polymorphic across posts/comments — see the doc). Writes are trigger- and
   RPC-only (`mark_notification_read` / `mark_all_notifications_read` for read
   state; no client insert/update/delete grant exists at all).
+
+## communities (implemented)
+
+- Implemented by `supabase/migrations/202609120003_communities.sql` (Social
+  Network Pass 5). See `docs/COMMUNITIES_MODERATION.md`.
+- Purpose: A public topic community.
+- Fields: `id`, `owner_id`, `slug`, `name`, `description`, `rules`,
+  `created_at`, `updated_at`, `is_active`.
+- Relationship to users: `owner_id → auth.users` (cascade). Always
+  `auth.uid()` at creation time — never client-supplied.
+- Privacy: Public in V1 — any authenticated member can read an active
+  (`is_active`) row. Writes are RPC-only (`create_community`); there is no
+  client insert/update/delete grant.
+- Indexes: `(slug)`; `(created_at desc, id desc)`.
+- Validation: name 2–80 characters; slug unique, lowercase letters/digits/
+  single hyphens, 3–60 characters; description ≤ 2000 characters; rules
+  ≤ 5000 characters.
+
+## community_members (implemented)
+
+- Implemented by `supabase/migrations/202609120003_communities.sql`.
+- Purpose: Membership and role (`owner` / `moderator` / `member`) of a user
+  in a community.
+- Fields: `community_id`, `user_id`, `role`, `joined_at`. Primary key
+  `(community_id, user_id)`.
+- Relationship to users: `user_id → auth.users` (cascade);
+  `community_id → communities` (cascade).
+- Privacy: Public alongside its (active) community — any authenticated
+  member can read. Writes are RPC-only (`create_community` /
+  `join_community` insert; `leave_community` / `remove_community_member` /
+  `ban_community_member` delete; `promote_community_moderator` /
+  `demote_community_moderator` update `role`). Role is
+  database-authoritative — the browser cannot assign or forge a role.
+- Indexes: primary key `(community_id, user_id)`; `(user_id)`;
+  `(community_id, role)`.
+- Validation: `role` CHECKed against `('owner', 'moderator', 'member')`. The
+  owner recorded at creation can never leave, be removed, demoted or banned
+  (enforced inside every relevant RPC, not just the UI).
+
+## community_post_links (implemented)
+
+- Implemented by `supabase/migrations/202609120003_communities.sql`.
+- Purpose: Links one `public.posts` row to the community it was shared into;
+  reuses the existing post model rather than forking a second one.
+- Fields: `community_id`, `post_id` (unique — a post belongs to at most one
+  community), `author_id`, `created_at`, `removed_at`, `removed_by`,
+  `removal_reason`. Primary key `(community_id, post_id)`.
+- Relationship to users: `author_id` / `removed_by → auth.users`
+  (cascade / set null).
+- Privacy: A live (`removed_at is null`) link on an active community is
+  readable by any authenticated member. Writes are RPC-only
+  (`create_community_post` inserts; `remove_community_post` stamps
+  `removed_at`/`removed_by`/`removal_reason` — the underlying post is never
+  touched). Moderator "removal" removes the post from the community only;
+  the post keeps its normal Diong visibility everywhere else.
+- Indexes: primary key `(community_id, post_id)`; unique `(post_id)`;
+  `(community_id, created_at desc)`.
+- Validation: `removal_reason` ≤ 500 characters. A community post is always
+  created with `visibility = 'public'`.
+
+## community_bans (implemented)
+
+- Implemented by `supabase/migrations/202609120003_communities.sql`.
+- Purpose: A community-scoped ban — distinct from the global user block
+  (`public.blocks`). Blocks joining or posting in one community only; never
+  affects the global follow/block graph, direct messages, or any other
+  community.
+- Fields: `community_id`, `user_id`, `banned_by`, `reason`, `created_at`.
+  Primary key `(community_id, user_id)`.
+- Relationship to users: `user_id → auth.users` (cascade);
+  `banned_by → auth.users` (set null).
+- Privacy: **No client select grant at all** — read only inside
+  `SECURITY DEFINER` RPCs (`is_community_banned`, `list_community_bans`),
+  the same pattern `blocked_between()` uses for `public.blocks`. Writes are
+  RPC-only (`ban_community_member` inserts; `unban_community_member`
+  deletes — unbanning does not restore membership).
+- Indexes: primary key `(community_id, user_id)`;
+  `(community_id, user_id)`.
+- Validation: `reason` ≤ 500 characters; never targets the community owner.
+
+## reports (implemented)
+
+- Implemented by `supabase/migrations/202609120003_communities.sql`.
+- Purpose: A general report against a post, comment, profile, community, or
+  community post.
+- Fields: `id`, `reporter_id`, `target_type`, `target_id`, `target_user_id`,
+  `reason`, `details`, `status`, `created_at`.
+- Relationship to users: `reporter_id → auth.users` (cascade). Always
+  `auth.uid()` — never client-supplied. `target_user_id → auth.users`
+  (cascade), used only when `target_type = 'profile'`.
+- Privacy: **No client select grant at all** — read only inside
+  `SECURITY DEFINER` RPCs (`list_community_moderation_reports`, scoped to
+  one community's own community/community-post reports; never selects
+  `reporter_id`, so reporter identity is not exposed even to community
+  moderators). Writes are RPC-only (`create_report`); there is no client
+  insert/update/delete grant. A duplicate open report against the same
+  target silently no-ops rather than erroring or revealing duplication.
+- Indexes: `(target_type, target_id)`; `(status, created_at desc)`; a
+  partial unique index on `(reporter_id, target_type,
+  coalesce(target_id, -1), coalesce(target_user_id, <nil uuid>)) where
+  status = 'open'`.
+- Validation: `target_type` CHECKed against `('post', 'comment', 'profile',
+  'community', 'community_post')`; `reason` CHECKed against a fixed list;
+  `status` CHECKed against `('open', 'reviewed', 'actioned', 'dismissed')`;
+  a combined CHECK (`reports_target_shape`) ties `target_type` to exactly
+  one of `target_id` (bigint targets) or `target_user_id` (profile target)
+  being set; `details` ≤ 2000 characters. In-app status changes (review /
+  action / dismiss) are not yet implemented — deferred past Pass 5.

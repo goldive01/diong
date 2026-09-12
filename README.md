@@ -53,6 +53,22 @@ and makes no guaranteed-outcome claims.
   (`/search`) across people and posts the viewer may see. All block-aware, all
   paginated, no AI recommendations, no engagement ranking. (Social Network
   Pass 3 — `docs/NOTIFICATIONS_DISCOVER_SEARCH.md`.)
+- **Direct messages** — a private 1-to-1 conversation from any public
+  profile's **Message** button, an inbox (`/messages`) and a conversation
+  view (`/messages/<id>`) with unread state, a nav badge and a notification.
+  Exactly one conversation per user pair; a block in either direction stops
+  new conversations, stops sending, and hides the conversation from both
+  inboxes until unblocked. (Social Network Pass 4 —
+  `docs/DIRECT_MESSAGES.md`.)
+- **Communities** — public topic communities at `/communities`: create one
+  and become its owner automatically, join/leave, owner/moderator/member
+  roles, and community posts that reuse the normal Diong post model (like,
+  comment, bookmark all work the same). Owner/moderator tooling at
+  `/communities/<slug>/moderation` — promote/demote, remove/ban/unban a
+  member, remove a post from the community without deleting the author's
+  underlying post — plus a shared **Report** control (post, comment,
+  profile, community, community post) and community results in Search and
+  Discover. (Social Network Pass 5 — `docs/COMMUNITIES_MODERATION.md`.)
 - Profile settings (username, display name, bio).
 - Privacy Notice and Terms of Use.
 - Branded 404, error boundaries and route-transition loading states.
@@ -109,9 +125,12 @@ file into the SQL Editor once, in order:
 7. `202609100002_social_graph.sql`
 8. `202609100003_social_content.sql`
 9. `202609100004_notifications_discover_search.sql`
+10. `202609120001_fix_social_profile_username.sql`
+11. `202609120002_direct_messages.sql`
+12. `202609120003_communities.sql`
 
 Each file is a single transaction and is **not** idempotent — never re-run a
-migration that already succeeded. Migrations 2–9 depend on earlier ones. Row
+migration that already succeeded. Migrations 2–12 depend on earlier ones. Row
 Level Security is enabled on every user-owned table; all writes go through
 column-scoped grants or `SECURITY DEFINER` RPCs.
 
@@ -162,13 +181,12 @@ See [`/privacy`](app/privacy/page.tsx) and [`/terms`](app/terms/page.tsx).
 
 ## Deferred to V1.1
 
-Not yet built: standalone Goals, standalone Habits, a standalone Journal, direct
-messages, communities, post images / media, an AI Coach, Google
-integrations, payments, and a native mobile app. These are planned for later
-releases and are not advertised as available. The follow / block **social
-graph**, the **posts / feed / comments / likes / bookmarks** layer, and
-**notifications, Discover & Search** ship now (see V1 capabilities); the
-messaging and communities layers that build on them do not.
+Not yet built: standalone Goals, standalone Habits, a standalone Journal, post
+images / media, an AI Coach, Google integrations, payments, and a native
+mobile app. These are planned for later releases and are not advertised as
+available. The follow / block **social graph**, the **posts / feed /
+comments / likes / bookmarks** layer, **notifications, Discover & Search**,
+**direct messages** and **communities** all ship now (see V1 capabilities).
 
 ## Documentation
 
@@ -179,6 +197,8 @@ messaging and communities layers that build on them do not.
 - `docs/SOCIAL_GRAPH_SETUP.md` — follow / block schema, RPCs, privacy, verification
 - `docs/SOCIAL_CONTENT.md` — posts / feed / comments / likes / bookmarks schema, visibility model, RLS, verification
 - `docs/NOTIFICATIONS_DISCOVER_SEARCH.md` — notifications / Discover / Search schema, event flow, privacy, verification
+- `docs/DIRECT_MESSAGES.md` — conversations / messages schema, RPCs, blocking behaviour, verification
+- `docs/COMMUNITIES_MODERATION.md` — communities / membership / moderation / reports schema, RPCs, RLS, verification
 - `docs/DAILY_PRIME_HISTORY.md` — Prime reflections / history / progress
 - `docs/DEPLOYMENT.md` — deployment
 - `docs/RELEASE_CHECKLIST.md` — launch checklist
