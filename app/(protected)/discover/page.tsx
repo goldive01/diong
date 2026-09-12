@@ -1,9 +1,14 @@
+import Link from "next/link";
 import { requireCompletedProfile } from "@/src/lib/auth";
 import { discoverPeople, listDiscoverPosts } from "@/src/lib/social/discover-data";
 import { parsePageNumber, PAGE_SIZE } from "@/src/lib/social/pagination";
+import { listDiscoverCommunities } from "@/src/lib/communities/community-data";
 import { DiscoverPeopleList } from "@/src/components/social/discover-people-list";
 import { PostFeed } from "@/src/components/social/post-feed";
+import { CommunityCard } from "@/src/components/communities/community-card";
 import { loadMoreDiscoverPosts } from "@/app/(protected)/discover/actions";
+
+const DISCOVER_COMMUNITIES_LIMIT = 4;
 
 export const metadata = {
   title: "Discover",
@@ -18,9 +23,10 @@ export default async function DiscoverPage({
   const { peoplePage: peoplePageParam } = await searchParams;
   const peoplePage = parsePageNumber(peoplePageParam);
 
-  const [people, posts] = await Promise.all([
+  const [people, posts, communities] = await Promise.all([
     discoverPeople(supabase, peoplePage),
     listDiscoverPosts(supabase, { limit: PAGE_SIZE }),
+    listDiscoverCommunities(supabase, 1, DISCOVER_COMMUNITIES_LIMIT),
   ]);
 
   return (
@@ -49,6 +55,32 @@ export default async function DiscoverPage({
           emptyText="No new people to discover right now. Check back soon."
         />
       </section>
+
+      {communities.communities.length > 0 && (
+        <section aria-labelledby="discover-communities-heading" className="mb-10">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2
+              id="discover-communities-heading"
+              className="text-lg font-semibold"
+            >
+              Communities to discover
+            </h2>
+            <Link
+              href="/communities"
+              className="text-sm font-semibold text-[#59654a] hover:underline"
+            >
+              See all
+            </Link>
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {communities.communities.map((community) => (
+              <li key={community.id}>
+                <CommunityCard community={community} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section aria-labelledby="discover-posts-heading">
         <h2 id="discover-posts-heading" className="mb-4 text-lg font-semibold">

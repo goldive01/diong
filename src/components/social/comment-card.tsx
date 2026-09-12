@@ -5,6 +5,8 @@ import { useState, useTransition } from "react";
 import type { CommentNode, PostCommentView } from "@/src/lib/social/post-data";
 import { PostTimestamp } from "@/src/components/social/post-timestamp";
 import { CommentForm } from "@/src/components/social/comment-form";
+import { ReportButton } from "@/src/components/social/report-button";
+import { createReportAction } from "@/app/(protected)/reports/actions";
 import {
   deleteCommentAction,
   editCommentAction,
@@ -123,6 +125,12 @@ function SingleComment({
         <p role="alert" className="mt-1 text-xs text-[#9b3f37]">
           {error}
         </p>
+      )}
+
+      {!deleted && !comment.isAuthor && (
+        <ReportButton
+          action={createReportAction.bind(null, "comment", comment.id, null)}
+        />
       )}
     </div>
   );

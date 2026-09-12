@@ -16,11 +16,15 @@ export function PostFeed({
   initialCursor,
   loadMore,
   emptyText,
+  communityBadge,
 }: {
   initialPosts: FeedPost[];
   initialCursor: string | null;
   loadMore: LoadMore;
   emptyText: string;
+  /** Passed through to every PostCard — set when every post in this feed
+   * belongs to the same community (e.g. a community's own post feed). */
+  communityBadge?: { slug: string; name: string } | null;
 }) {
   const [posts, setPosts] = useState<FeedPost[]>(initialPosts);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
@@ -56,7 +60,7 @@ export function PostFeed({
       <ul className="space-y-4">
         {posts.map((post) => (
           <li key={post.id}>
-            <PostCard post={post} />
+            <PostCard post={post} communityBadge={communityBadge} />
           </li>
         ))}
       </ul>

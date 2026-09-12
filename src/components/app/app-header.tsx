@@ -20,6 +20,7 @@ export function AppHeader({
           <Link href="/daily-prime" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Daily Prime</Link>
           <Link href="/feed" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Feed</Link>
           <Link href="/discover" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Discover</Link>
+          <Link href="/communities" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Communities</Link>
           <Link href="/connections" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Connections</Link>
           <Link
             href="/messages"

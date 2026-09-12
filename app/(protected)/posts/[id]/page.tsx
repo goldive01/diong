@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCompletedProfile } from "@/src/lib/auth";
 import { getPost, listComments } from "@/src/lib/social/post-data";
+import { getPostCommunity } from "@/src/lib/communities/community-data";
 import { PostCard } from "@/src/components/social/post-card";
 import { CommentThread } from "@/src/components/social/comment-thread";
 
@@ -26,6 +27,7 @@ export default async function PostDetailPage({
   if (!post) notFound();
 
   const comments = await listComments(supabase, post.id);
+  const communityBadge = await getPostCommunity(supabase, post.id);
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-10 sm:px-6 sm:py-14">
@@ -37,7 +39,7 @@ export default async function PostDetailPage({
       </Link>
 
       <div className="mt-4">
-        <PostCard post={post} detailed />
+        <PostCard post={post} detailed communityBadge={communityBadge} />
       </div>
 
       <CommentThread

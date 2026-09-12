@@ -6,6 +6,8 @@ import {
 } from "@/src/lib/social/social-labels";
 import { FollowButton } from "@/src/components/social/follow-button";
 import { BlockButton } from "@/src/components/social/block-button";
+import { ReportButton } from "@/src/components/social/report-button";
+import { createReportAction } from "@/app/(protected)/reports/actions";
 import { MessageButton } from "@/src/components/messages/message-button";
 import {
   blockProfile,
@@ -89,6 +91,9 @@ export function ProfileSocialPanel({ profile }: { profile: SocialProfile }) {
               profile.username,
             )}
             displayName={profile.display_name}
+          />
+          <ReportButton
+            action={createReportAction.bind(null, "profile", null, profile.id)}
           />
         </div>
       )}

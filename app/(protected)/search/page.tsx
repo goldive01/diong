@@ -2,9 +2,11 @@ import { requireCompletedProfile } from "@/src/lib/auth";
 import { searchPeople, searchPosts } from "@/src/lib/social/search-data";
 import { parsePageNumber, PAGE_SIZE } from "@/src/lib/social/pagination";
 import { parseSearchQuery } from "@/src/lib/social/search-validation";
+import { searchCommunities } from "@/src/lib/communities/community-data";
 import { SearchForm } from "@/src/components/social/search-form";
 import { DiscoverPeopleList } from "@/src/components/social/discover-people-list";
 import { PostFeed } from "@/src/components/social/post-feed";
+import { CommunityList } from "@/src/components/communities/community-list";
 import { loadMoreSearchPosts } from "@/app/(protected)/search/actions";
 
 export const metadata = {
@@ -17,18 +19,25 @@ export default async function SearchPage({
   searchParams: Promise<{
     q?: string | string[];
     peoplePage?: string | string[];
+    communitiesPage?: string | string[];
   }>;
 }) {
   const { supabase } = await requireCompletedProfile();
-  const { q, peoplePage: peoplePageParam } = await searchParams;
+  const {
+    q,
+    peoplePage: peoplePageParam,
+    communitiesPage: communitiesPageParam,
+  } = await searchParams;
   const { query, valid } = parseSearchQuery(q);
   const peoplePage = parsePageNumber(peoplePageParam);
+  const communitiesPage = parsePageNumber(communitiesPageParam);
 
   const results =
     query.length > 0 && valid
       ? await Promise.all([
           searchPeople(supabase, query, peoplePage),
           searchPosts(supabase, query, { limit: PAGE_SIZE }),
+          searchCommunities(supabase, query, communitiesPage),
         ])
       : null;
 
@@ -75,6 +84,22 @@ export default async function SearchPage({
               initialCursor={results[1].nextCursor}
               loadMore={loadMoreSearchPosts.bind(null, query)}
               emptyText="No posts found."
+            />
+          </section>
+
+          <section aria-labelledby="search-communities-heading">
+            <h2
+              id="search-communities-heading"
+              className="mb-4 text-lg font-semibold"
+            >
+              Communities
+            </h2>
+            <CommunityList
+              page={results[2]}
+              basePath="/search"
+              pageParam="communitiesPage"
+              extraParams={{ q: query }}
+              emptyText="No communities found."
             />
           </section>
         </div>

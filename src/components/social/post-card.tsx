@@ -9,6 +9,8 @@ import {
 import { PostTimestamp } from "@/src/components/social/post-timestamp";
 import { PostEngagementBar } from "@/src/components/social/post-engagement-bar";
 import { PostOwnerActions } from "@/src/components/social/post-owner-actions";
+import { ReportButton } from "@/src/components/social/report-button";
+import { createReportAction } from "@/app/(protected)/reports/actions";
 
 const PREVIEW_CHARS = 600;
 
@@ -18,9 +20,14 @@ const PREVIEW_CHARS = 600;
 export function PostCard({
   post,
   detailed = false,
+  communityBadge,
 }: {
   post: FeedPost;
   detailed?: boolean;
+  /** The community this post belongs to, if any — shown as a small tag so a
+   * community post is recognisable wherever it is rendered (feed, profile,
+   * Discover, its own community page). */
+  communityBadge?: { slug: string; name: string } | null;
 }) {
   const isLong = !detailed && post.body.length > PREVIEW_CHARS;
   const shown = isLong
@@ -61,6 +68,14 @@ export function PostCard({
             {visibilityShort(post.visibility)}
           </span>
         )}
+        {communityBadge && (
+          <Link
+            href={`/communities/${communityBadge.slug}`}
+            className="rounded-full bg-[#eef2e5] px-2.5 py-1 text-[#42512a] hover:underline"
+          >
+            {communityBadge.name}
+          </Link>
+        )}
       </div>
 
       <p className="mt-3 whitespace-pre-wrap break-words leading-7 text-[#38423b]">
@@ -88,6 +103,14 @@ export function PostCard({
       <PostEngagementBar post={post} showCommentLink={!detailed} />
 
       {post.isAuthor && <PostOwnerActions postId={post.id} />}
+
+      {!post.isAuthor && (
+        <div className="mt-2">
+          <ReportButton
+            action={createReportAction.bind(null, "post", post.id, null)}
+          />
+        </div>
+      )}
     </article>
   );
 }

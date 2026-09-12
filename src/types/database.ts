@@ -431,6 +431,169 @@ export type MessageRow = {
   is_own: boolean;
 };
 
+// ---------------------------------------------------------------------------
+// Communities — Social Network Pass 5
+// ---------------------------------------------------------------------------
+
+export type CommunityRole = "owner" | "moderator" | "member";
+
+export type ReportTargetType =
+  | "post"
+  | "comment"
+  | "profile"
+  | "community"
+  | "community_post";
+
+export type ReportReason =
+  | "spam"
+  | "harassment"
+  | "hate_or_abuse"
+  | "unsafe_content"
+  | "misinformation"
+  | "impersonation"
+  | "other";
+
+export type ReportStatus = "open" | "reviewed" | "actioned" | "dismissed";
+
+export type Community = {
+  id: number;
+  owner_id: string;
+  slug: string;
+  name: string;
+  description: string;
+  rules: string;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+};
+
+export type CommunityMember = {
+  community_id: number;
+  user_id: string;
+  role: CommunityRole;
+  joined_at: string;
+};
+
+export type CommunityPostLink = {
+  community_id: number;
+  post_id: number;
+  author_id: string;
+  created_at: string;
+  removed_at: string | null;
+  removed_by: string | null;
+  removal_reason: string | null;
+};
+
+export type CommunityBan = {
+  community_id: number;
+  user_id: string;
+  banned_by: string | null;
+  reason: string | null;
+  created_at: string;
+};
+
+export type Report = {
+  id: number;
+  reporter_id: string;
+  target_type: ReportTargetType;
+  target_id: number | null;
+  target_user_id: string | null;
+  reason: ReportReason;
+  details: string | null;
+  status: ReportStatus;
+  created_at: string;
+};
+
+// Row shape returned by public.get_community(). viewer_role is null when the
+// viewer is not a member.
+export type CommunityRow = {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  rules: string;
+  owner_id: string;
+  owner_username: string;
+  owner_display_name: string;
+  member_count: number;
+  created_at: string;
+  viewer_role: CommunityRole | null;
+};
+
+// Row shape returned by public.list_my_communities() — the viewer's role is
+// always non-null (every row is a community the viewer belongs to).
+export type CommunityMyRow = {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  member_count: number;
+  viewer_role: CommunityRole;
+  total_count: number;
+};
+
+// Row shape returned by public.list_discover_communities() — active
+// communities the viewer has not joined.
+export type CommunityDiscoverRow = {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  member_count: number;
+  total_count: number;
+};
+
+// Row shape returned by public.search_communities().
+export type CommunitySearchRow = {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  member_count: number;
+  viewer_joined: boolean;
+  total_count: number;
+};
+
+// Row shape returned by public.list_community_members().
+export type CommunityMemberRow = {
+  user_id: string;
+  username: string;
+  display_name: string;
+  role: CommunityRole;
+  joined_at: string;
+  total_count: number;
+};
+
+// Row shape returned by public.list_community_bans() (owner/moderator only).
+export type CommunityBanRow = {
+  user_id: string;
+  username: string;
+  display_name: string;
+  reason: string | null;
+  created_at: string;
+};
+
+// Row shape returned by public.list_community_moderation_reports(). Never
+// includes reporter_id — reporter identity is never exposed, even to
+// community moderators.
+export type CommunityModerationReportRow = {
+  id: number;
+  target_type: ReportTargetType;
+  target_id: number;
+  reason: ReportReason;
+  details: string | null;
+  status: ReportStatus;
+  created_at: string;
+};
+
+// Row shape returned by public.get_post_community() — the (at most one) live
+// community a post belongs to, or no row for a plain (non-community) post.
+export type PostCommunityRow = {
+  community_id: number;
+  slug: string;
+  name: string;
+};
+
 type TableDefinition<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -604,6 +767,41 @@ export type Database = {
       messages: TableDefinition<
         Message,
         // Read-only for clients. Rows are created only by send_message().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      communities: TableDefinition<
+        Community,
+        // Read-only for clients. Rows are created only by create_community().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      community_members: TableDefinition<
+        CommunityMember,
+        // Read-only for clients. Rows are created only by create_community() /
+        // join_community(); role is changed only by promote_community_moderator()
+        // / demote_community_moderator().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      community_post_links: TableDefinition<
+        CommunityPostLink,
+        // Read-only for clients. Rows are created only by
+        // create_community_post(); changed only by remove_community_post().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      community_bans: TableDefinition<
+        CommunityBan,
+        // No client select or write grant at all. Rows are created only by
+        // ban_community_member() and removed only by unban_community_member().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      reports: TableDefinition<
+        Report,
+        // No client select or write grant at all. Rows are created only by
+        // create_report().
         Record<string, never>,
         Record<string, never>
       >;
@@ -826,6 +1024,110 @@ export type Database = {
       get_unread_message_count: {
         Args: Record<never, never>;
         Returns: number;
+      };
+      create_community: {
+        Args: {
+          p_name: string;
+          p_slug: string;
+          p_description?: string;
+          p_rules?: string;
+        };
+        Returns: number;
+      };
+      join_community: {
+        Args: { p_community_id: number };
+        Returns: undefined;
+      };
+      leave_community: {
+        Args: { p_community_id: number };
+        Returns: undefined;
+      };
+      create_community_post: {
+        Args: { p_community_id: number; p_post_type: string; p_body: string };
+        Returns: number;
+      };
+      remove_community_post: {
+        Args: {
+          p_community_id: number;
+          p_post_id: number;
+          p_reason?: string | null;
+        };
+        Returns: undefined;
+      };
+      promote_community_moderator: {
+        Args: { p_community_id: number; p_user_id: string };
+        Returns: undefined;
+      };
+      demote_community_moderator: {
+        Args: { p_community_id: number; p_user_id: string };
+        Returns: undefined;
+      };
+      remove_community_member: {
+        Args: { p_community_id: number; p_user_id: string };
+        Returns: undefined;
+      };
+      ban_community_member: {
+        Args: {
+          p_community_id: number;
+          p_user_id: string;
+          p_reason?: string | null;
+        };
+        Returns: undefined;
+      };
+      unban_community_member: {
+        Args: { p_community_id: number; p_user_id: string };
+        Returns: undefined;
+      };
+      create_report: {
+        Args: {
+          p_target_type: ReportTargetType;
+          p_target_id: number | null;
+          p_target_user_id: string | null;
+          p_reason: ReportReason;
+          p_details?: string | null;
+        };
+        Returns: undefined;
+      };
+      get_community: {
+        Args: { p_slug: string };
+        Returns: CommunityRow[];
+      };
+      list_my_communities: {
+        Args: { p_limit?: number; p_offset?: number };
+        Returns: CommunityMyRow[];
+      };
+      list_discover_communities: {
+        Args: { p_limit?: number; p_offset?: number };
+        Returns: CommunityDiscoverRow[];
+      };
+      search_communities: {
+        Args: { p_query: string; p_limit?: number; p_offset?: number };
+        Returns: CommunitySearchRow[];
+      };
+      list_community_members: {
+        Args: { p_community_id: number; p_limit?: number; p_offset?: number };
+        Returns: CommunityMemberRow[];
+      };
+      list_community_posts: {
+        Args: {
+          p_community_id: number;
+          p_before_created_at?: string | null;
+          p_before_id?: number | null;
+          p_limit?: number;
+        };
+        Returns: FeedPostRow[];
+      };
+      list_community_moderation_reports: {
+        Args: { p_community_id: number };
+        Returns: CommunityModerationReportRow[];
+      };
+      list_community_bans: {
+        Args: { p_community_id: number };
+        Returns: CommunityBanRow[];
+      };
+      get_post_community: {
+        Args: { p_post_id: number };
+        Returns: PostCommunityRow[];
       };
     };
     Enums: Record<string, never>;
