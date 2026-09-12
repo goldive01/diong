@@ -179,6 +179,136 @@ export type RecordedConnectionInteraction = {
   last_meaningful_contact_at: string;
 };
 
+// ---------------------------------------------------------------------------
+// Social graph (follows / blocks) — Social Network Pass 1
+// ---------------------------------------------------------------------------
+
+export type Follow = {
+  id: number;
+  follower_id: string;
+  following_id: string;
+  created_at: string;
+};
+
+export type Block = {
+  id: number;
+  blocker_id: string;
+  blocked_id: string;
+  created_at: string;
+};
+
+// Row shape returned by public.get_social_profile(). `bio`, `follower_count`
+// and `following_count` are null when the viewer has blocked the profile owner.
+// The function returns no row at all when the owner has blocked the viewer.
+export type SocialProfileRow = {
+  id: string;
+  username: string;
+  display_name: string;
+  bio: string | null;
+  follower_count: number | null;
+  following_count: number | null;
+  is_self: boolean;
+  viewer_follows: boolean;
+  viewer_blocked: boolean;
+};
+
+// ---------------------------------------------------------------------------
+// Social content (posts / comments / likes / bookmarks) — Social Network Pass 2
+// ---------------------------------------------------------------------------
+
+export type PostType =
+  | "update"
+  | "reflection"
+  | "progress"
+  | "learning"
+  | "achievement"
+  | "question"
+  | "resource";
+
+export type PostVisibility = "public" | "followers" | "private";
+
+export type Post = {
+  id: number;
+  user_id: string;
+  post_type: PostType;
+  body: string;
+  visibility: PostVisibility;
+  created_at: string;
+  updated_at: string;
+  edited_at: string | null;
+  deleted_at: string | null;
+};
+
+export type PostComment = {
+  id: number;
+  post_id: number;
+  user_id: string;
+  parent_comment_id: number | null;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  edited_at: string | null;
+  deleted_at: string | null;
+};
+
+export type PostLike = {
+  user_id: string;
+  post_id: number;
+  created_at: string;
+};
+
+export type PostBookmark = {
+  user_id: string;
+  post_id: number;
+  created_at: string;
+};
+
+// Row shape shared by list_feed / get_post / list_user_posts. Author fields are
+// joined; engagement counts and viewer flags are computed server-side so a
+// caller never issues a per-post follow-up query.
+export type FeedPostRow = {
+  id: number;
+  user_id: string;
+  post_type: PostType;
+  body: string;
+  visibility: PostVisibility;
+  created_at: string;
+  edited_at: string | null;
+  author_username: string;
+  author_display_name: string;
+  like_count: number;
+  comment_count: number;
+  viewer_liked: boolean;
+  viewer_bookmarked: boolean;
+  is_author: boolean;
+};
+
+// list_bookmarks adds the bookmark timestamp used for keyset pagination.
+export type BookmarkPostRow = FeedPostRow & { bookmarked_at: string };
+
+// Row shape returned by list_post_comments. `body` is null when the comment is
+// deleted (a tombstone kept only to preserve a live reply's context).
+export type PostCommentRow = {
+  id: number;
+  parent_comment_id: number | null;
+  user_id: string;
+  author_username: string;
+  author_display_name: string;
+  body: string | null;
+  created_at: string;
+  edited_at: string | null;
+  is_deleted: boolean;
+  is_author: boolean;
+};
+
+export type PostEngagementRow = {
+  post_id: number;
+  like_count: number;
+  comment_count: number;
+  viewer_liked: boolean;
+  viewer_bookmarked: boolean;
+};
+
 type TableDefinition<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -283,6 +413,48 @@ export type Database = {
         // Append-only: no UPDATE or DELETE grant or policy exists.
         Record<string, never>
       >;
+      follows: TableDefinition<
+        Follow,
+        // Read-only for clients. Rows are created only by the follow_user()
+        // SECURITY DEFINER RPC and removed only by unfollow_user() / a block.
+        Record<string, never>,
+        Record<string, never>
+      >;
+      blocks: TableDefinition<
+        Block,
+        // Read-only for clients (and only your own rows). Rows are created only
+        // by block_user() and removed only by unblock_user().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      posts: TableDefinition<
+        Post,
+        // Read-only for clients. Rows are created only by create_post() and
+        // changed only by update_post() / soft_delete_post().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      post_comments: TableDefinition<
+        PostComment,
+        // Read-only for clients. Rows are created only by create_comment() and
+        // changed only by edit_own_comment() / delete_own_comment().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      post_likes: TableDefinition<
+        PostLike,
+        // Read-only for clients (own rows only). Written only by like_post() /
+        // unlike_post().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      post_bookmarks: TableDefinition<
+        PostBookmark,
+        // Read-only for clients (own rows only). Written only by bookmark_post()
+        // / remove_bookmark().
+        Record<string, never>,
+        Record<string, never>
+      >;
     };
     Views: Record<string, never>;
     Functions: {
@@ -319,6 +491,107 @@ export type Database = {
       get_connection_nudges: {
         Args: Record<never, never>;
         Returns: ConnectionNudge[];
+      };
+      follow_user: {
+        Args: { p_target_id: string };
+        Returns: undefined;
+      };
+      unfollow_user: {
+        Args: { p_target_id: string };
+        Returns: undefined;
+      };
+      block_user: {
+        Args: { p_target_id: string };
+        Returns: undefined;
+      };
+      unblock_user: {
+        Args: { p_target_id: string };
+        Returns: undefined;
+      };
+      get_social_profile: {
+        Args: { p_username: string };
+        Returns: SocialProfileRow[];
+      };
+      list_feed: {
+        Args: {
+          p_before_created_at?: string | null;
+          p_before_id?: number | null;
+          p_limit?: number;
+        };
+        Returns: FeedPostRow[];
+      };
+      get_post: {
+        Args: { p_post_id: number };
+        Returns: FeedPostRow[];
+      };
+      list_user_posts: {
+        Args: {
+          p_author_id: string;
+          p_before_created_at?: string | null;
+          p_before_id?: number | null;
+          p_limit?: number;
+        };
+        Returns: FeedPostRow[];
+      };
+      list_bookmarks: {
+        Args: {
+          p_before_created_at?: string | null;
+          p_before_post_id?: number | null;
+          p_limit?: number;
+        };
+        Returns: BookmarkPostRow[];
+      };
+      get_post_engagement: {
+        Args: { p_post_ids: number[] };
+        Returns: PostEngagementRow[];
+      };
+      list_post_comments: {
+        Args: { p_post_id: number };
+        Returns: PostCommentRow[];
+      };
+      create_post: {
+        Args: { p_post_type: string; p_body: string; p_visibility: string };
+        Returns: number;
+      };
+      update_post: {
+        Args: { p_post_id: number; p_body: string; p_visibility: string };
+        Returns: undefined;
+      };
+      soft_delete_post: {
+        Args: { p_post_id: number };
+        Returns: undefined;
+      };
+      create_comment: {
+        Args: {
+          p_post_id: number;
+          p_body: string;
+          p_parent_comment_id?: number | null;
+        };
+        Returns: number;
+      };
+      edit_own_comment: {
+        Args: { p_comment_id: number; p_body: string };
+        Returns: undefined;
+      };
+      delete_own_comment: {
+        Args: { p_comment_id: number };
+        Returns: undefined;
+      };
+      like_post: {
+        Args: { p_post_id: number };
+        Returns: undefined;
+      };
+      unlike_post: {
+        Args: { p_post_id: number };
+        Returns: undefined;
+      };
+      bookmark_post: {
+        Args: { p_post_id: number };
+        Returns: undefined;
+      };
+      remove_bookmark: {
+        Args: { p_post_id: number };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

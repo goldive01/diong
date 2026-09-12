@@ -8,6 +8,7 @@ export function AppHeader() {
         <Link href="/home" className="text-xl font-bold tracking-tight">Diong</Link>
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-4">
           <Link href="/daily-prime" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Daily Prime</Link>
+          <Link href="/feed" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Feed</Link>
           <Link href="/connections" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Connections</Link>
           <Link href="/settings/profile" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Profile settings</Link>
           <form action={logout}>

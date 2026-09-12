@@ -105,41 +105,101 @@ This document describes the Diong data model. Phase 3 tables are implemented by 
 - Useful indexes: `habit_id`; `(user_id, log_date)`; unique `(habit_id, log_date)`.
 - Validation rules: Prevent duplicate logs for same habit/date; habit must belong to same user.
 
-## posts
+## posts (implemented)
 
-- Purpose: Store user-created community posts.
-- Important fields: `id`, `user_id`, `body`, `visibility`, `created_at`, `updated_at`, `deleted_at`.
-- Relationship to users: Many posts belong to one user.
-- Privacy requirements: Public-to-authenticated in MVP when visibility is community; deleted posts hidden.
-- Useful indexes: `user_id`; `created_at`; `(visibility, created_at)`.
-- Validation rules: Body required; length limit; no automatic inclusion of private journal, goal, or habit content.
+- Implemented by `supabase/migrations/202609100003_social_content.sql` (Social
+  Network Pass 2). See `docs/SOCIAL_CONTENT.md`.
+- Purpose: Store user-created posts for the growth feed.
+- Fields: `id`, `user_id`, `post_type`, `body`, `visibility`, `created_at`,
+  `updated_at`, `edited_at`, `deleted_at`.
+- Relationship to users: Many posts belong to one user (`user_id → auth.users`,
+  cascade). Not client-writable.
+- Privacy: `public` (any member, no block), `followers` (author's followers, no
+  block), `private` (author only). Soft-deleted posts are invisible to everyone.
+  Enforced by `public.viewer_can_see_post()`, the `posts` RLS `select` policy
+  and every read RPC.
+- Indexes: partial (`where deleted_at is null`) on `(user_id, created_at desc)`,
+  `(created_at desc, id desc)`, `(visibility, created_at desc)`.
+- Validation: `post_type` and `visibility` CHECKed against fixed lists; body
+  trimmed, 1–5000 chars; plain text only. Writes are RPC-only (`create_post` /
+  `update_post` / `soft_delete_post`).
 
-## comments
+## post_comments (implemented)
 
-- Purpose: Store comments on posts.
-- Important fields: `id`, `post_id`, `user_id`, `body`, `created_at`, `updated_at`, `deleted_at`.
-- Relationship to users: Many comments belong to one user and one post.
-- Privacy requirements: Visible to authenticated users who can view the parent post.
-- Useful indexes: `post_id`; `user_id`; `created_at`.
-- Validation rules: Body required; length limit; parent post must be visible and not deleted.
+- Implemented by `supabase/migrations/202609100003_social_content.sql`.
+- Purpose: Comments and one reply level on a post.
+- Fields: `id`, `post_id`, `user_id`, `parent_comment_id`, `body`, `created_at`,
+  `updated_at`, `edited_at`, `deleted_at`.
+- Privacy: Readable when the parent post is visible to the viewer and no block
+  stands between the viewer and the comment author. Deleted comments are never
+  returned with a body.
+- Indexes: `(post_id, created_at)`; `(parent_comment_id) where not null`;
+  `(user_id)`.
+- Validation: body trimmed, 1–2000 chars; one reply level enforced by a
+  composite FK (`same post`) + the `post_comments_enforce_one_level` trigger
+  (`parent is a root`) + the `create_comment` RPC. Writes are RPC-only.
 
-## post_likes
+## post_likes (implemented)
 
-- Purpose: Store likes on posts.
-- Important fields: `id`, `post_id`, `user_id`, `created_at`.
-- Relationship to users: Many likes belong to one user and one post.
-- Privacy requirements: Like counts visible with posts; individual like records can be visible only as needed.
-- Useful indexes: `post_id`; `user_id`; unique `(post_id, user_id)`.
-- Validation rules: Prevent duplicate likes; parent post must be visible and not deleted.
+- Implemented by `supabase/migrations/202609100003_social_content.sql`.
+- Purpose: Store likes on posts (like only — no reaction types).
+- Fields: `user_id`, `post_id`, `created_at`. Primary key `(user_id, post_id)`.
+- Privacy: A member reads only their own like rows (RLS). Counts come from the
+  read RPCs, never row-by-row.
+- Indexes: primary key `(user_id, post_id)`; `(post_id)` for counts.
+- Validation: primary key prevents duplicates; `like_post` requires a visible,
+  unblocked post and is idempotent. Writes are RPC-only.
 
-## follows
+## post_bookmarks (implemented)
 
+- Implemented by `supabase/migrations/202609100003_social_content.sql`.
+- Purpose: A member's private "saved for later" list.
+- Fields: `user_id`, `post_id`, `created_at`. Primary key `(user_id, post_id)`.
+- Privacy: **Owner-only** — RLS `select` is `user_id = auth.uid()`, and only
+  `list_bookmarks` (running as the owner) returns them. A now-invisible post is
+  dropped from `/saved`, never exposed.
+- Indexes: primary key `(user_id, post_id)`; `(user_id, created_at desc)` for
+  the saved order.
+- Validation: primary key prevents duplicates; `bookmark_post` requires a
+  visible, unblocked post and is idempotent. Writes are RPC-only.
+
+## follows (implemented)
+
+- Implemented by `supabase/migrations/202609100002_social_graph.sql` (Social
+  Network Pass 1). See `docs/SOCIAL_GRAPH_SETUP.md`.
 - Purpose: Store follower relationships between users.
-- Important fields: `id`, `follower_user_id`, `following_user_id`, `created_at`.
-- Relationship to users: Both fields reference auth users or profiles.
-- Privacy requirements: Follow counts and relationships can be visible in MVP unless later made configurable.
-- Useful indexes: `follower_user_id`; `following_user_id`; unique `(follower_user_id, following_user_id)`.
-- Validation rules: Users cannot follow themselves; prevent duplicate follows.
+- Fields: `id`, `follower_id`, `following_id`, `created_at`.
+- Relationship to users: Both fields reference `auth.users(id)` with
+  `on delete cascade`.
+- Privacy: The follow graph is readable by any signed-in member (counts and
+  lists are a normal profile feature). The block-aware boundary is applied by
+  `public.get_social_profile()` — a member the owner has blocked cannot resolve
+  the owner's profile or lists.
+- Indexes: `unique (follower_id, following_id)` (also serves the "following"
+  list); `follows_following_id_idx` on `(following_id)` for the "followers"
+  list.
+- Validation: `check (follower_id <> following_id)`; unique pair prevents
+  duplicates; a `BEFORE INSERT` trigger refuses a follow when a block exists in
+  either direction. Writes are RPC-only (`follow_user` / `unfollow_user`); there
+  is no direct `insert`/`update`/`delete` grant.
+
+## blocks (implemented)
+
+- Implemented by `supabase/migrations/202609100002_social_graph.sql` (Social
+  Network Pass 1).
+- Purpose: Let a member block another member — no follow either direction, and a
+  privacy boundary later layers (feed, messages) can query.
+- Fields: `id`, `blocker_id`, `blocked_id`, `created_at`.
+- Relationship to users: Both reference `auth.users(id)` with
+  `on delete cascade`.
+- Privacy: A member can read only the blocks **they** created
+  (`select` policy `auth.uid() = blocker_id`). "Who blocked me" is applied
+  server-side inside the RPCs, never returned to a client.
+- Indexes: `unique (blocker_id, blocked_id)`; `blocks_blocker_id_idx`;
+  `blocks_blocked_id_idx`.
+- Validation: `check (blocker_id <> blocked_id)`; unique pair. An `AFTER INSERT`
+  trigger deletes any follow edge in either direction. Writes are RPC-only
+  (`block_user` / `unblock_user`).
 
 ## notifications
 

@@ -32,6 +32,20 @@ and makes no guaranteed-outcome claims.
   deactivate / reactivate, and a home nudge for the connection most worth
   revisiting.
 - Authenticated-visible public profile pages.
+- **Social graph** — follow / unfollow, block / unblock, follower and following
+  lists (paginated), follower / following counts on the public profile.
+  Blocking is authoritative in the database: it removes any follow in either
+  direction and refuses future ones. A member the owner has blocked cannot
+  resolve that profile. (Social Network Pass 1 — `docs/SOCIAL_GRAPH_SETUP.md`.)
+- **Social content** — a chronological growth feed at `/feed`: write a post
+  (one of seven growth-centred types) with public / followers-only / private
+  visibility; read your own posts plus public and followers-only posts from
+  people you follow, 20 per page. Like, comment, reply once, and privately
+  bookmark (`/saved`). Open a post at `/posts/<id>`; edit or soft-delete your
+  own posts and comments. A Posts section on the public profile shows only what
+  the viewer is authorised to see. Visibility and Pass 1 blocking are enforced
+  in the database. No feed ranking, no view counts, no popularity metrics.
+  (Social Network Pass 2 — `docs/SOCIAL_CONTENT.md`.)
 - Profile settings (username, display name, bio).
 - Privacy Notice and Terms of Use.
 - Branded 404, error boundaries and route-transition loading states.
@@ -85,9 +99,11 @@ file into the SQL Editor once, in order:
 4. `202609060002_connection_rpcs.sql`
 5. `202609080001_fix_daily_prime_assigned_date.sql`
 6. `202609100001_prime_reflections.sql`
+7. `202609100002_social_graph.sql`
+8. `202609100003_social_content.sql`
 
 Each file is a single transaction and is **not** idempotent — never re-run a
-migration that already succeeded. Migrations 2–6 depend on earlier ones. Row
+migration that already succeeded. Migrations 2–8 depend on earlier ones. Row
 Level Security is enabled on every user-owned table; all writes go through
 column-scoped grants or `SECURITY DEFINER` RPCs.
 
@@ -129,17 +145,22 @@ Deployment steps, environment configuration and Supabase Auth setup are in
 
 ## Privacy
 
-Your Daily Prime reflections, your Connections and your private connection notes
-are visible only to you. Your profile (display name, username, optional bio and
-interest names) is visible to other signed-in users. See
-[`/privacy`](app/privacy/page.tsx) and [`/terms`](app/terms/page.tsx).
+Your Daily Prime reflections, your Connections, your private connection notes
+and your saved posts are visible only to you. Your profile (display name,
+username, optional bio and interest names), your follower / following graph and
+the posts you choose to share are visible to other signed-in users according to
+each post's visibility; the accounts you have blocked are visible only to you.
+See [`/privacy`](app/privacy/page.tsx) and [`/terms`](app/terms/page.tsx).
 
 ## Deferred to V1.1
 
-Not in V1: standalone Goals, standalone Habits, a standalone Journal, a
-community / social feed, notifications, an AI Coach, Google integrations,
-payments, and a native mobile app. These are planned for later releases and are
-not advertised as available.
+Not yet built: standalone Goals, standalone Habits, a standalone Journal, direct
+messages, communities, notifications, post images / media, an AI Coach, Google
+integrations, payments, and a native mobile app. These are planned for later
+releases and are not advertised as available. The follow / block **social
+graph** and the **posts / feed / comments / likes / bookmarks** layer ship now
+(see V1 capabilities); the messaging, communities and notification layers that
+build on them do not.
 
 ## Documentation
 
@@ -147,6 +168,8 @@ not advertised as available.
 - `docs/DATA_MODEL.md` — data model
 - `docs/ROUTES.md` — routes (shipped and planned)
 - `docs/CONNECTIONS_SETUP.md` — Connections schema, RPCs, verification
+- `docs/SOCIAL_GRAPH_SETUP.md` — follow / block schema, RPCs, privacy, verification
+- `docs/SOCIAL_CONTENT.md` — posts / feed / comments / likes / bookmarks schema, visibility model, RLS, verification
 - `docs/DAILY_PRIME_HISTORY.md` — Prime reflections / history / progress
 - `docs/DEPLOYMENT.md` — deployment
 - `docs/RELEASE_CHECKLIST.md` — launch checklist

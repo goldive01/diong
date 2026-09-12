@@ -21,7 +21,13 @@
 | `/connections/new` | Protected | Add a connection. | Fill the form, save. | Not applicable. | Field + form errors; safe generic DB error. |
 | `/connections/[id]` | Protected | Connection detail: facts, private notes, active state, record-interaction form, interaction history. | Record an interaction; deactivate / reactivate; go to edit. | "No interactions recorded yet." | Missing / foreign id → branded 404. |
 | `/connections/[id]/edit` | Protected | Edit the six connection detail fields. | Update, save. | Not applicable. | Field + form errors; safe generic DB error. |
-| `/profile/[username]` | Protected, onboarding required | Authenticated-visible public profile. | View display name, username, optional bio, interests. | Neutral future-activity message. | Unknown / incomplete username → branded 404. |
+| `/feed` | Protected, onboarding required | Compose a post and read a chronological feed of your own posts plus public / followers-only posts from people you follow. | Write a post (type, body, visibility); like / save; open a post; **Load more**. | "Your feed is quiet for now." | Feed falls back to an empty list on a read error. |
+| `/posts/[id]` | Protected, onboarding required | One post in full, with its comments, one reply level and the comment form. | Like / save; comment; reply once; edit / delete your own comment; open the author profile; edit / delete your own post. | "No comments yet." | Missing / deleted / not-visible / blocked post → branded 404 (non-disclosing). |
+| `/posts/[id]/edit` | Protected, onboarding required, author only | Edit the body and visibility of your own post. | Update, save. | Not applicable. | Not visible or not your post → branded 404; field + form errors. |
+| `/saved` | Protected, onboarding required | Your private list of bookmarked posts, most recently saved first. | Open a post; remove a bookmark; **Load more**. | "No saved posts yet." | Falls back to an empty list on a read error. |
+| `/profile/[username]` | Protected, onboarding required | Authenticated-visible public profile with social graph and a Posts section. | View display name, username, bio, interests, follower / following counts; Follow / Unfollow; Block / Unblock; **Edit profile** on your own; read the member's visible posts. | Neutral "no posts you can see" message. | Unknown / incomplete username, or owner has blocked the viewer → branded 404. |
+| `/profile/[username]/followers` | Protected, onboarding required | Paginated list of accounts following the owner. | Open a person's profile; page through. | "No followers yet." | Unknown / incomplete username, or owner has blocked the viewer → branded 404; viewer has blocked the owner → "list hidden" notice. |
+| `/profile/[username]/following` | Protected, onboarding required | Paginated list of accounts the owner follows. | Open a person's profile; page through. | "Not following anyone yet." | Same as `/followers`. |
 | `/settings/profile` | Protected, onboarding required | Update the owner's public profile. | Update username, display name, bio. | Existing profile values. | Field and form save errors. |
 
 Protected routes redirect unauthenticated users to `/login`. Authoritative
@@ -40,7 +46,15 @@ authorization checks.
 | `/goals` | Personal goals — create, edit, complete, archive, delete, updates. |
 | `/habits` | Habits and streaks — create habits, log completions. |
 | `/journal` | Standalone private journal entries. |
-| `/community` | Community / social feed — posts, likes, comments, follows. |
+| `/messages` | Direct messages. |
+| `/communities` | Topic communities. |
 | `/notifications` | Basic in-app notifications. |
 
 These are not built, not linked from the app, and not advertised as available.
+
+Follow / block / follower lists ship in the **Social Network Pass 1** slice
+(`docs/SOCIAL_GRAPH_SETUP.md`). Posts, the feed, comments, likes and bookmarks
+ship in the **Social Network Pass 2** slice (`docs/SOCIAL_CONTENT.md`) —
+`/feed`, `/posts/[id]`, `/posts/[id]/edit` and `/saved` are listed under V1
+routes above. Direct messages, communities and notifications are **not** part of
+Pass 2.

@@ -42,6 +42,10 @@ export default function PrivacyPage() {
           name, type and purpose as you record them, an optional contact rhythm,
           your optional private notes, and the interactions you log.
         </li>
+        <li>
+          <strong>Social graph.</strong> The Diong accounts you follow, the
+          accounts that follow you, and the accounts you have blocked.
+        </li>
       </ul>
 
       <h2>How your information is used</h2>
@@ -62,7 +66,12 @@ export default function PrivacyPage() {
         <li>
           Your profile — display name, username, optional bio and your interest
           names — is visible to other signed-in Diong users on your profile
-          page.
+          page, along with your follower and following counts and lists.
+        </li>
+        <li>
+          The accounts you have blocked are visible only to you. Blocking an
+          account removes any follow between you in either direction and prevents
+          a new one; a blocked account cannot open your profile.
         </li>
       </ul>
 

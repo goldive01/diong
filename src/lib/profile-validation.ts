@@ -9,15 +9,21 @@ export const RESERVED_USERNAMES = new Set([
   "connections",
   "diong",
   "explore",
+  "feed",
   "help",
   "home",
   "login",
   "logout",
   "notifications",
+  "posts",
   "profile",
   "register",
+  "saved",
   "settings",
   "support",
+  "blocked",
+  "followers",
+  "following",
 ]);
 
 export type ProfileField = "username" | "displayName" | "bio" | "interestIds";
