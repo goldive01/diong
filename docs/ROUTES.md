@@ -33,6 +33,8 @@
 | `/notifications/open/[id]` | Protected, onboarding required | Route Handler (not a page): marks one notification read, then redirects to its target. | Not applicable. | Not applicable. | An invalid id or unrecognised `?to=` target redirects to `/notifications`. |
 | `/discover` | Protected, onboarding required | People to discover (not yet followed, not blocked) plus recent public posts. | Follow a suggested person; open a post; **Load more**. | "No new people to discover right now." / "No public posts yet." | Falls back to an empty list on a read error. |
 | `/search` | Protected, onboarding required | Global search across people (username / display name / bio) and posts (body) the viewer may see. | Submit a query; open a person or post; page through. | "No people found." / "No posts found." | A too-short query shows "Type at least 2 characters to search." instead of a false "no results". |
+| `/messages` | Protected, onboarding required | Inbox: one row per direct conversation with at least one message, most recently active first. | Open a conversation; **Load more**. | "No conversations yet. Start one from someone's profile." | Falls back to an empty list on a read error. |
+| `/messages/[conversationId]` | Protected, onboarding required, members only | One 1-to-1 conversation: message history and the composer. Opening it marks it read. | Send a message; **Load earlier messages**. | "Say hello to \<name\>." when no message has been sent yet. | Missing / foreign id, non-member, or a block now standing between the two participants → branded 404. |
 
 Protected routes redirect unauthenticated users to `/login`. Authoritative
 checks run in server pages/layouts: incomplete users go to `/onboarding`,
@@ -50,7 +52,6 @@ authorization checks.
 | `/goals` | Personal goals — create, edit, complete, archive, delete, updates. |
 | `/habits` | Habits and streaks — create habits, log completions. |
 | `/journal` | Standalone private journal entries. |
-| `/messages` | Direct messages. |
 | `/communities` | Topic communities. |
 
 These are not built, not linked from the app, and not advertised as available.
@@ -62,5 +63,7 @@ ship in the **Social Network Pass 2** slice (`docs/SOCIAL_CONTENT.md`) —
 routes above. In-app notifications, Discover and global Search ship in the
 **Social Network Pass 3** slice (`docs/NOTIFICATIONS_DISCOVER_SEARCH.md`) —
 `/notifications`, `/notifications/open/[id]`, `/discover` and `/search` are
-listed under V1 routes above. Direct messages and communities are **not**
-part of Pass 3.
+listed under V1 routes above. Secure private 1-to-1 direct messages ship in
+the **Social Network Pass 4** slice (`docs/DIRECT_MESSAGES.md`) — `/messages`
+and `/messages/[conversationId]` are listed under V1 routes above. Communities
+are **not** part of Pass 4.

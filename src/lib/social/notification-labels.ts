@@ -26,6 +26,8 @@ export function describeNotification(
       return `${name} commented on your post.`;
     case "comment_reply":
       return `${name} replied to your comment.`;
+    case "new_message":
+      return `${name} sent you a message.`;
     default:
       return `${name} interacted with your activity.`;
   }
@@ -43,7 +45,11 @@ const USERNAME_RE = /^[a-z0-9_]{3,30}$/;
 export function notificationHref(
   item: Pick<
     NotificationItem,
-    "notificationType" | "actorUsername" | "targetAvailable" | "targetPostId"
+    | "notificationType"
+    | "actorUsername"
+    | "targetAvailable"
+    | "targetPostId"
+    | "entityId"
   >,
 ): string | null {
   if (!item.targetAvailable) return null;
@@ -51,6 +57,14 @@ export function notificationHref(
   if (item.notificationType === "new_follower") {
     const username = item.actorUsername?.trim().toLowerCase() ?? "";
     return USERNAME_RE.test(username) ? `/profile/${username}` : null;
+  }
+
+  if (item.notificationType === "new_message") {
+    return typeof item.entityId === "number" &&
+      Number.isSafeInteger(item.entityId) &&
+      item.entityId > 0
+      ? `/messages/${item.entityId}`
+      : null;
   }
 
   if (

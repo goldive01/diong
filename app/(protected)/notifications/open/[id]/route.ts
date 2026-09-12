@@ -8,7 +8,8 @@ import { markNotificationRead } from "@/src/lib/social/notification-mutations";
 // the list was rendered, but is re-validated independently here against a
 // strict allow-list before it is ever used in a redirect: this closes any
 // open-redirect risk even though the value is same-origin-generated.
-const SAFE_TARGET_RE = /^\/(posts\/\d+|profile\/[a-z0-9_]{3,30})$/;
+const SAFE_TARGET_RE =
+  /^\/(posts\/\d+|profile\/[a-z0-9_]{3,30}|messages\/\d+)$/;
 
 function toSafeId(raw: string): number | null {
   if (!/^\d+$/.test(raw)) return null;

@@ -317,9 +317,14 @@ export type NotificationType =
   | "new_follower"
   | "post_like"
   | "post_comment"
-  | "comment_reply";
+  | "comment_reply"
+  | "new_message";
 
-export type NotificationEntityType = "profile" | "post" | "comment";
+export type NotificationEntityType =
+  | "profile"
+  | "post"
+  | "comment"
+  | "conversation";
 
 export type Notification = {
   id: number;
@@ -364,6 +369,66 @@ export type DiscoverPersonRow = {
 
 export type DiscoverPeopleRow = DiscoverPersonRow & {
   shared_interest_count: number;
+};
+
+// ---------------------------------------------------------------------------
+// Direct messages — Social Network Pass 4
+// ---------------------------------------------------------------------------
+
+export type Conversation = {
+  id: number;
+  user_min_id: string;
+  user_max_id: string;
+  last_message_at: string | null;
+  created_at: string;
+};
+
+export type ConversationMember = {
+  conversation_id: number;
+  user_id: string;
+  last_read_at: string | null;
+  created_at: string;
+};
+
+export type Message = {
+  id: number;
+  conversation_id: number;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
+// Row shape returned by public.list_conversations(). last_message_body /
+// last_message_at are null for a conversation with no messages, but such a
+// conversation never appears in this list (the RPC filters it out).
+export type ConversationSummaryRow = {
+  id: number;
+  other_user_id: string;
+  other_username: string;
+  other_display_name: string;
+  last_message_body: string | null;
+  last_message_at: string | null;
+  unread: boolean;
+};
+
+// Row shape returned by public.get_conversation(). No row at all when the
+// caller is not a member, the id does not exist, or a block now stands
+// between the two participants.
+export type ConversationRow = {
+  id: number;
+  other_user_id: string;
+  other_username: string;
+  other_display_name: string;
+  created_at: string;
+};
+
+// Row shape returned by public.list_messages(), newest first.
+export type MessageRow = {
+  id: number;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  is_own: boolean;
 };
 
 type TableDefinition<Row, Insert, Update> = {
@@ -515,9 +580,30 @@ export type Database = {
       notifications: TableDefinition<
         Notification,
         // Read-only for clients. Rows are created only by the
-        // notify_new_follower() / notify_post_like() / notify_post_comment()
-        // triggers, and changed only by mark_notification_read() /
-        // mark_all_notifications_read().
+        // notify_new_follower() / notify_post_like() / notify_post_comment() /
+        // notify_new_message() triggers, and changed only by
+        // mark_notification_read() / mark_all_notifications_read().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      conversations: TableDefinition<
+        Conversation,
+        // Read-only for clients. Rows are created only by
+        // get_or_create_conversation().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      conversation_members: TableDefinition<
+        ConversationMember,
+        // Read-only for clients. Rows are created only by
+        // get_or_create_conversation(); last_read_at is changed only by
+        // send_message() (the sender) / mark_conversation_read().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      messages: TableDefinition<
+        Message,
+        // Read-only for clients. Rows are created only by send_message().
         Record<string, never>,
         Record<string, never>
       >;
@@ -703,6 +789,43 @@ export type Database = {
           p_limit?: number;
         };
         Returns: FeedPostRow[];
+      };
+      get_or_create_conversation: {
+        Args: { p_other_user_id: string };
+        Returns: number;
+      };
+      send_message: {
+        Args: { p_conversation_id: number; p_body: string };
+        Returns: number;
+      };
+      mark_conversation_read: {
+        Args: { p_conversation_id: number };
+        Returns: undefined;
+      };
+      list_conversations: {
+        Args: {
+          p_before_last_message_at?: string | null;
+          p_before_id?: number | null;
+          p_limit?: number;
+        };
+        Returns: ConversationSummaryRow[];
+      };
+      get_conversation: {
+        Args: { p_conversation_id: number };
+        Returns: ConversationRow[];
+      };
+      list_messages: {
+        Args: {
+          p_conversation_id: number;
+          p_before_created_at?: string | null;
+          p_before_id?: number | null;
+          p_limit?: number;
+        };
+        Returns: MessageRow[];
+      };
+      get_unread_message_count: {
+        Args: Record<never, never>;
+        Returns: number;
       };
     };
     Enums: Record<string, never>;

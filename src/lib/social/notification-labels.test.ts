@@ -30,6 +30,13 @@ describe("describeNotification", () => {
         actorDisplayName: "Sarah",
       }),
     ).toBe("Sarah replied to your comment.");
+
+    expect(
+      describeNotification({
+        notificationType: "new_message",
+        actorDisplayName: "Daniel",
+      }),
+    ).toBe("Daniel sent you a message.");
   });
 
   it("falls back to 'Someone' when the actor is gone or blank", () => {
@@ -50,6 +57,7 @@ describe("notificationHref", () => {
         actorUsername: null,
         targetAvailable: false,
         targetPostId: 42,
+        entityId: 42,
       }),
     ).toBeNull();
   });
@@ -61,6 +69,7 @@ describe("notificationHref", () => {
         actorUsername: "daniel_k",
         targetAvailable: true,
         targetPostId: null,
+        entityId: null,
       }),
     ).toBe("/profile/daniel_k");
   });
@@ -73,6 +82,7 @@ describe("notificationHref", () => {
           actorUsername: bad,
           targetAvailable: true,
           targetPostId: null,
+          entityId: null,
         }),
       ).toBeNull();
     }
@@ -90,6 +100,7 @@ describe("notificationHref", () => {
           actorUsername: "daniel_k",
           targetAvailable: true,
           targetPostId: 123,
+          entityId: 123,
         }),
       ).toBe("/posts/123");
     }
@@ -103,20 +114,48 @@ describe("notificationHref", () => {
           actorUsername: "daniel_k",
           targetAvailable: true,
           targetPostId,
+          entityId: targetPostId,
         }),
       ).toBeNull();
     }
   });
 
-  it("never returns anything but /posts/<id>, /profile/<username> or null", () => {
+  it("links a new_message notification to the conversation", () => {
+    expect(
+      notificationHref({
+        notificationType: "new_message",
+        actorUsername: "daniel_k",
+        targetAvailable: true,
+        targetPostId: null,
+        entityId: 7,
+      }),
+    ).toBe("/messages/7");
+  });
+
+  it("returns null for new_message with no usable conversation id", () => {
+    for (const entityId of [null, 0, -1, 1.5]) {
+      expect(
+        notificationHref({
+          notificationType: "new_message",
+          actorUsername: "daniel_k",
+          targetAvailable: true,
+          targetPostId: null,
+          entityId,
+        }),
+      ).toBeNull();
+    }
+  });
+
+  it("never returns anything but /posts/<id>, /profile/<username>, /messages/<id> or null", () => {
     const shapes = [
-      { notificationType: "new_follower" as const, actorUsername: "daniel_k", targetAvailable: true, targetPostId: null },
-      { notificationType: "post_comment" as const, actorUsername: "daniel_k", targetAvailable: true, targetPostId: 9 },
-      { notificationType: "comment_reply" as const, actorUsername: null, targetAvailable: false, targetPostId: 9 },
+      { notificationType: "new_follower" as const, actorUsername: "daniel_k", targetAvailable: true, targetPostId: null, entityId: null },
+      { notificationType: "post_comment" as const, actorUsername: "daniel_k", targetAvailable: true, targetPostId: 9, entityId: 9 },
+      { notificationType: "comment_reply" as const, actorUsername: null, targetAvailable: false, targetPostId: 9, entityId: 9 },
+      { notificationType: "new_message" as const, actorUsername: "daniel_k", targetAvailable: true, targetPostId: null, entityId: 3 },
     ];
     for (const shape of shapes) {
       const href = notificationHref(shape);
-      expect(href === null || /^\/(posts\/\d+|profile\/[a-z0-9_]{3,30})$/.test(href)).toBe(true);
+      expect(href === null || /^\/(posts\/\d+|profile\/[a-z0-9_]{3,30}|messages\/\d+)$/.test(href)).toBe(true);
     }
   });
 });

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireCompletedProfile } from "@/src/lib/auth";
 import { checkSocialTarget } from "@/src/lib/social/social-validation";
 import {
@@ -13,6 +14,8 @@ import type {
   BlockActionState,
   FollowActionState,
 } from "@/src/lib/social/social-form-state";
+import { getOrCreateConversation } from "@/src/lib/messages/message-mutations";
+import type { MessageButtonState } from "@/src/lib/messages/message-form-state";
 
 // Every export in this "use server" module is an async server action.
 //
@@ -123,4 +126,32 @@ export async function unblockProfile(
   previousState: BlockActionState,
 ): Promise<BlockActionState> {
   return runBlockMutation("unblock", targetUserId, username, previousState);
+}
+
+// Direct messages (Social Network Pass 4). On success this redirects straight
+// to the (possibly newly created) conversation rather than returning a
+// "success" state — the same shape createConnection() (connections/actions.ts)
+// already uses for a create-then-navigate action. Takes no previous-state /
+// formData parameters (unlike the toggles above) since a "Message" click has
+// no prior relationship state to read back — a function with fewer
+// parameters is still assignable to MessageButton's two-argument action type.
+export async function messageProfile(
+  targetUserId: string,
+): Promise<MessageButtonState> {
+  const { supabase, userId } = await requireCompletedProfile();
+
+  if (checkSocialTarget(userId, targetUserId) !== null) {
+    return { status: "error", message: NOT_AVAILABLE };
+  }
+
+  const result = await getOrCreateConversation(supabase, targetUserId);
+
+  if (result.status === "error") {
+    return {
+      status: "error",
+      message: result.reason === "not_available" ? NOT_AVAILABLE : GENERIC,
+    };
+  }
+
+  redirect(`/messages/${result.data}`);
 }

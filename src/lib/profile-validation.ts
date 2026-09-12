@@ -15,6 +15,7 @@ export const RESERVED_USERNAMES = new Set([
   "home",
   "login",
   "logout",
+  "messages",
   "notifications",
   "posts",
   "profile",

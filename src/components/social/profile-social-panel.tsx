@@ -6,9 +6,11 @@ import {
 } from "@/src/lib/social/social-labels";
 import { FollowButton } from "@/src/components/social/follow-button";
 import { BlockButton } from "@/src/components/social/block-button";
+import { MessageButton } from "@/src/components/messages/message-button";
 import {
   blockProfile,
   followProfile,
+  messageProfile,
   unblockProfile,
   unfollowProfile,
 } from "@/app/(protected)/profile/[username]/actions";
@@ -70,6 +72,11 @@ export function ProfileSocialPanel({ profile }: { profile: SocialProfile }) {
               profile.id,
               profile.username,
             )}
+            displayName={profile.display_name}
+          />
+          <MessageButton
+            key="message"
+            action={messageProfile.bind(null, profile.id)}
             displayName={profile.display_name}
           />
           <BlockButton
