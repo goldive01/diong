@@ -1,9 +1,16 @@
 # Diong V1 Release Plan
 
-Status of this document: **planning only**. No implementation has been done for
-the gaps below. Generated from a full repository audit.
+Status of this document: **planning only**, generated from a repository audit
+taken before Social Network Pass 1. It is now historical for the areas Pass
+1–6 have since shipped (see `docs/SOCIAL_GRAPH_SETUP.md`,
+`docs/SOCIAL_CONTENT.md`, `docs/NOTIFICATIONS_DISCOVER_SEARCH.md`,
+`docs/DIRECT_MESSAGES.md`, `docs/COMMUNITIES_MODERATION.md` and
+`docs/GOALS_HABITS_JOURNAL.md` for the current, authoritative state of each).
+Rows 9–11 below and blocker #3 have been updated to reflect Pass 6; the rest
+of this document is left as originally written.
 
-Estimated V1 completion: **~62%**.
+Estimated V1 completion: **~62%** (at time of writing; superseded by Pass 6 for
+Goals/Habits/Journal).
 
 ---
 
@@ -19,9 +26,9 @@ Estimated V1 completion: **~62%**.
 | 6 | Prime completion / reflection | **BLOCKED** | Code complete (Phase G, uncommitted). Needs migration `202609100001_prime_reflections.sql` applied. |
 | 7 | Prime history + progress | **BLOCKED** | Code complete (Phase G, uncommitted). List/detail/progress work without the migration; reflection markers/text need it. |
 | 8 | Connections lifecycle | **COMPLETE** | Dashboard, create, detail, edit, record interaction, deactivate/reactivate, SQL nudge engine, home card. Migrations applied. |
-| 9 | Goals | **MISSING** | No table, RLS, migration, route, data layer, server action, UI, nav, or test. |
-| 10 | Habits + streaks | **MISSING** | No table, RLS, migration, route, data layer, server action, UI, nav, or test. |
-| 11 | Private journal | **MISSING** | No table, RLS, migration, route, data layer, server action, UI, nav, or test. |
+| 9 | Goals | **COMPLETE** (Pass 6) | Table + RLS, milestones (RPC-only), status lifecycle, explicit progress, routes, nav, tests. See `docs/GOALS_HABITS_JOURNAL.md`. |
+| 10 | Habits + streaks | **COMPLETE** (Pass 6) | Table + RLS, RPC-only check-ins, deterministic TypeScript streak calculation, routes, nav, tests. See `docs/GOALS_HABITS_JOURNAL.md`. |
+| 11 | Private journal | **COMPLETE** (Pass 6) | Table + RLS, optional same-owner links to a goal/habit/Prime assignment, paginated search/filter, routes, nav, tests. See `docs/GOALS_HABITS_JOURNAL.md`. |
 | 12 | Profile / settings | **PARTIAL** | `/settings/profile` edits username/display name/bio. No `/settings` index, no in-app password change, no account deletion, no sign-out surface outside header. |
 | 13 | Empty / loading / error states | **PARTIAL** | Empty states are good where features exist. **No `loading.tsx`, `error.tsx`, `not-found.tsx` or `global-error.tsx` anywhere.** |
 | 14 | Mobile responsiveness | **NEEDS POLISH** | Mobile-first Tailwind throughout; no verified 375px pass; no obvious overflow found. |
@@ -36,7 +43,10 @@ Estimated V1 completion: **~62%**.
 
 1. **Apply migration** `supabase/migrations/202609100001_prime_reflections.sql` to the target Supabase project (exact SQL in `docs/DAILY_PRIME_HISTORY.md`). Until then, saving a Prime reflection errors.
 2. **Commit + push Phase G** (Daily Prime history/reflection/progress) — currently uncommitted working-tree changes + untracked files.
-3. **Goals, Habits, Journal do not exist.** Three full vertical slices required for the stated V1 scope.
+3. ~~**Goals, Habits, Journal do not exist.**~~ **Done — Pass 6.** Migration
+   `202609130001_goals_habits_journal.sql` is written but not yet applied to
+   the target Supabase project, and the Pass 6 app code is uncommitted
+   pending review — see `docs/GOALS_HABITS_JOURNAL.md`.
 4. **No route-level `error.tsx` / `not-found.tsx` / `loading.tsx`.** An unhandled server error in any page currently renders the Next default error screen.
 5. **No `/privacy` and `/terms` pages.** A commercial product collecting email + profile data should ship these; footer links are dead (`href="#"`).
 

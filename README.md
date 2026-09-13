@@ -69,6 +69,19 @@ and makes no guaranteed-outcome claims.
   underlying post — plus a shared **Report** control (post, comment,
   profile, community, community post) and community results in Search and
   Discover. (Social Network Pass 5 — `docs/COMMUNITIES_MODERATION.md`.)
+- **Goals** — define a private goal (`/goals`) with an optional category and
+  target date, break it into milestones, update its progress explicitly (or
+  derive it from completed milestones with one deliberate click), and pause
+  / resume / complete / archive / reopen it.
+- **Habits** — start a private daily or weekly habit (`/habits`), check in
+  (or undo), and see a deterministic current and longest streak — nothing
+  fabricated for a missed day.
+- **Private journal** — write a strictly private entry (`/journal`) with an
+  optional mood and links to a goal, a habit and/or a Daily Prime
+  assignment; search and filter by date, mood or text. Goals, Habits and
+  the Journal are never shown in the feed, Discover, Search, a public
+  profile, communities or messages. (Pass 6 —
+  `docs/GOALS_HABITS_JOURNAL.md`.)
 - Profile settings (username, display name, bio).
 - Privacy Notice and Terms of Use.
 - Branded 404, error boundaries and route-transition loading states.
@@ -128,9 +141,10 @@ file into the SQL Editor once, in order:
 10. `202609120001_fix_social_profile_username.sql`
 11. `202609120002_direct_messages.sql`
 12. `202609120003_communities.sql`
+13. `202609130001_goals_habits_journal.sql`
 
 Each file is a single transaction and is **not** idempotent — never re-run a
-migration that already succeeded. Migrations 2–12 depend on earlier ones. Row
+migration that already succeeded. Migrations 2–13 depend on earlier ones. Row
 Level Security is enabled on every user-owned table; all writes go through
 column-scoped grants or `SECURITY DEFINER` RPCs.
 
@@ -172,21 +186,23 @@ Deployment steps, environment configuration and Supabase Auth setup are in
 
 ## Privacy
 
-Your Daily Prime reflections, your Connections, your private connection notes
-and your saved posts are visible only to you. Your profile (display name,
-username, optional bio and interest names), your follower / following graph and
-the posts you choose to share are visible to other signed-in users according to
-each post's visibility; the accounts you have blocked are visible only to you.
-See [`/privacy`](app/privacy/page.tsx) and [`/terms`](app/terms/page.tsx).
+Your Daily Prime reflections, your Connections, your private connection notes,
+your saved posts, and your Goals, Habits and Journal are visible only to you.
+Your profile (display name, username, optional bio and interest names), your
+follower / following graph and the posts you choose to share are visible to
+other signed-in users according to each post's visibility; the accounts you
+have blocked are visible only to you. See [`/privacy`](app/privacy/page.tsx)
+and [`/terms`](app/terms/page.tsx).
 
 ## Deferred to V1.1
 
-Not yet built: standalone Goals, standalone Habits, a standalone Journal, post
-images / media, an AI Coach, Google integrations, payments, and a native
-mobile app. These are planned for later releases and are not advertised as
-available. The follow / block **social graph**, the **posts / feed /
-comments / likes / bookmarks** layer, **notifications, Discover & Search**,
-**direct messages** and **communities** all ship now (see V1 capabilities).
+Not yet built: post images / media, an AI Coach, Google integrations,
+payments, and a native mobile app. These are planned for later releases and
+are not advertised as available. The follow / block **social graph**, the
+**posts / feed / comments / likes / bookmarks** layer,
+**notifications, Discover & Search**, **direct messages**, **communities**
+and the private **Goals / Habits / Journal** layer all ship now (see V1
+capabilities).
 
 ## Documentation
 
@@ -199,6 +215,7 @@ comments / likes / bookmarks** layer, **notifications, Discover & Search**,
 - `docs/NOTIFICATIONS_DISCOVER_SEARCH.md` — notifications / Discover / Search schema, event flow, privacy, verification
 - `docs/DIRECT_MESSAGES.md` — conversations / messages schema, RPCs, blocking behaviour, verification
 - `docs/COMMUNITIES_MODERATION.md` — communities / membership / moderation / reports schema, RPCs, RLS, verification
+- `docs/GOALS_HABITS_JOURNAL.md` — goals / milestones / habits / streaks / private journal schema, RLS, verification
 - `docs/DAILY_PRIME_HISTORY.md` — Prime reflections / history / progress
 - `docs/DEPLOYMENT.md` — deployment
 - `docs/RELEASE_CHECKLIST.md` — launch checklist

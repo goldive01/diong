@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DailyPrimeCard } from "@/src/components/prime/daily-prime-card";
 import { PrimeReflectionForm } from "@/src/components/prime/prime-reflection-form";
+import { PrimeJournalPrompt } from "@/src/components/prime/prime-journal-prompt";
 import { requireCompletedProfile } from "@/src/lib/auth";
 import { getDailyPrime, getPrimeReflection } from "@/src/lib/prime-data";
 import { savePrimeReflection } from "@/app/(protected)/daily-prime/actions";
@@ -44,11 +45,14 @@ export default async function DailyPrimePage() {
         <div className="space-y-8">
           <DailyPrimeCard prime={result.prime} />
           {result.prime.completed_at && (
-            <PrimeReflectionForm
-              action={savePrimeReflection.bind(null, result.prime.assignment_id)}
-              prompt={result.prime.reflection_prompt ?? DEFAULT_REFLECTION_PROMPT}
-              initialReflection={reflection ?? ""}
-            />
+            <>
+              <PrimeReflectionForm
+                action={savePrimeReflection.bind(null, result.prime.assignment_id)}
+                prompt={result.prime.reflection_prompt ?? DEFAULT_REFLECTION_PROMPT}
+                initialReflection={reflection ?? ""}
+              />
+              <PrimeJournalPrompt assignmentId={result.prime.assignment_id} />
+            </>
           )}
         </div>
       ) : (

@@ -40,6 +40,18 @@
 | `/communities/[slug]` | Protected, onboarding required | One community: description, rules, member count, owner, Join/Leave, and its post feed. | Join / Leave; share a post (members only); open Members / Moderation; **Report**; **Load more** posts. | "No posts yet." | Missing / inactive community → branded 404. |
 | `/communities/[slug]/members` | Protected, onboarding required | Paginated, role-ordered member list for one community. | Open a member's profile; page through. | "No members yet." | Missing / inactive community → branded 404. |
 | `/communities/[slug]/moderation` | Protected, owner or moderator only | Member management, bans, recent posts and the report queue for one community. | Promote / demote moderator; remove / ban / unban a member; remove a post from the community; page through members. | "No one is banned." / "No posts yet." / "No reports for this community." | Missing / inactive community, or viewer is not owner/moderator → branded 404 (same as a missing community — never reveals that a community exists but is off-limits). |
+| `/goals` | Protected, onboarding required | Private goals grouped into Active / Completed / Paused+Archived. | Open a goal; **New goal**. | "No goals yet. Create a direction you want to work toward." | Falls back to an empty list on a read error. |
+| `/goals/new` | Protected, onboarding required | Define a goal. | Enter title, optional description/category/target date; submit. | Not applicable. | Field + form errors. |
+| `/goals/[id]` | Protected, onboarding required, owner only | One goal: progress, milestones, status actions, linked journal entries. | Add / toggle a milestone; update progress; pause / resume / complete / archive; reopen a completed goal. | "No milestones yet. Break this goal into a few concrete steps." | Missing / foreign goal id → branded 404. |
+| `/goals/[id]/edit` | Protected, onboarding required, owner only | Edit a goal's title/description/category/target date. | Update, save. | Not applicable. | Field + form errors. |
+| `/habits` | Protected, onboarding required | Today's habits (quick check-in) and the full list. | Check in / undo; open a habit; **New habit**. | "No habits yet. Start with one repeatable action." | Falls back to an empty list on a read error. |
+| `/habits/new` | Protected, onboarding required | Start a habit. | Enter name, optional description, frequency, target per period; submit. | Not applicable. | Field + form errors. |
+| `/habits/[id]` | Protected, onboarding required, owner only | One habit: current/longest streak, total check-ins, check-in form, recent history. | Check in; archive / reactivate. | "No check-ins recorded yet." | Missing / foreign habit id → branded 404. |
+| `/habits/[id]/edit` | Protected, onboarding required, owner only | Edit a habit's name/description/frequency/target. | Update, save. | Not applicable. | Field + form errors. |
+| `/journal` | Protected, onboarding required | Private journal entries, newest first; filter by date, mood or text. | Open an entry; **New entry**; filter; page through. | "No journal entries yet. Write down what you are noticing." | "No entries match this filter." when a filter yields nothing. |
+| `/journal/new` | Protected, onboarding required | Write a journal entry, with optional links to a goal, a habit and/or a Daily Prime assignment. | Enter title/mood/body, optional links; submit. | Not applicable. | Field + form errors. |
+| `/journal/[id]` | Protected, onboarding required, owner only | Full private entry, with any linked goal/habit/Prime. | Edit; delete (confirmed, permanent). | Not applicable. | Missing / foreign entry id → branded 404. |
+| `/journal/[id]/edit` | Protected, onboarding required, owner only | Edit a journal entry. | Update, save. | Not applicable. | Field + form errors. |
 
 Protected routes redirect unauthenticated users to `/login`. Authoritative
 checks run in server pages/layouts: incomplete users go to `/onboarding`,
@@ -54,9 +66,6 @@ authorization checks.
 | `/about` | Explain Diong's mission, audience and boundaries. |
 | `/how-it-works` | Standalone workflow explainer (currently a section on `/`). |
 | `/settings` | Account-level settings index (password change, account deletion). |
-| `/goals` | Personal goals — create, edit, complete, archive, delete, updates. |
-| `/habits` | Habits and streaks — create habits, log completions. |
-| `/journal` | Standalone private journal entries. |
 
 These are not built, not linked from the app, and not advertised as available.
 
@@ -73,4 +82,9 @@ and `/messages/[conversationId]` are listed under V1 routes above. Public
 communities, community moderation and reporting ship in the **Social Network
 Pass 5** slice (`docs/COMMUNITIES_MODERATION.md`) — `/communities`,
 `/communities/new`, `/communities/[slug]`, `/communities/[slug]/members` and
-`/communities/[slug]/moderation` are listed under V1 routes above.
+`/communities/[slug]/moderation` are listed under V1 routes above. Private
+goals, habits and a private journal ship in **Pass 6**
+(`docs/GOALS_HABITS_JOURNAL.md`) — `/goals`, `/goals/new`, `/goals/[id]`,
+`/goals/[id]/edit`, `/habits`, `/habits/new`, `/habits/[id]`,
+`/habits/[id]/edit`, `/journal`, `/journal/new`, `/journal/[id]` and
+`/journal/[id]/edit` are listed under V1 routes above.

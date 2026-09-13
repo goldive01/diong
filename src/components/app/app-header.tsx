@@ -18,6 +18,16 @@ export function AppHeader({
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-4">
           <Link href="/daily-prime" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Daily Prime</Link>
+          <details className="group relative">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white [&::-webkit-details-marker]:hidden">
+              Growth
+            </summary>
+            <div className="absolute right-0 z-10 mt-1 w-44 rounded-2xl border border-[#ded7c9] bg-white p-1.5 shadow-lg">
+              <Link href="/goals" className="block rounded-xl px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-[#f7f4ee]">Goals</Link>
+              <Link href="/habits" className="block rounded-xl px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-[#f7f4ee]">Habits</Link>
+              <Link href="/journal" className="block rounded-xl px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-[#f7f4ee]">Journal</Link>
+            </div>
+          </details>
           <Link href="/feed" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Feed</Link>
           <Link href="/discover" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Discover</Link>
           <Link href="/communities" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Communities</Link>

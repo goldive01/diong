@@ -594,6 +594,102 @@ export type PostCommunityRow = {
   name: string;
 };
 
+// ---------------------------------------------------------------------------
+// Goals, Habits, Journal — Pass 6 (private personal-development layer)
+// ---------------------------------------------------------------------------
+
+export type GoalStatus = "active" | "paused" | "completed" | "archived";
+
+export type Goal = {
+  id: number;
+  user_id: string;
+  title: string;
+  description: string;
+  category: string | null;
+  status: GoalStatus;
+  target_date: string | null;
+  progress_percent: number;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+};
+
+export type GoalMilestone = {
+  id: number;
+  goal_id: number;
+  user_id: string;
+  title: string;
+  position: number;
+  is_completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+};
+
+export type HabitFrequency = "daily" | "weekly";
+
+export type Habit = {
+  id: number;
+  user_id: string;
+  name: string;
+  description: string;
+  frequency: HabitFrequency;
+  target_per_period: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
+};
+
+export type HabitCheckin = {
+  id: number;
+  habit_id: number;
+  user_id: string;
+  checkin_date: string;
+  value: number;
+  note: string | null;
+  created_at: string;
+};
+
+export type JournalMood =
+  | "calm"
+  | "focused"
+  | "energised"
+  | "neutral"
+  | "stressed"
+  | "low"
+  | "grateful"
+  | "reflective";
+
+export type JournalEntry = {
+  id: number;
+  user_id: string;
+  title: string | null;
+  body: string;
+  mood: JournalMood | null;
+  entry_date: string;
+  goal_id: number | null;
+  habit_id: number | null;
+  prime_assignment_id: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+// Row shape returned by public.toggle_goal_milestone().
+export type ToggledGoalMilestone = {
+  id: number;
+  is_completed: boolean;
+  completed_at: string | null;
+};
+
+// Row shape returned by public.check_in_habit().
+export type HabitCheckinRow = {
+  id: number;
+  habit_id: number;
+  checkin_date: string;
+  value: number;
+  note: string | null;
+};
+
 type TableDefinition<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -804,6 +900,104 @@ export type Database = {
         // create_report().
         Record<string, never>,
         Record<string, never>
+      >;
+      goals: TableDefinition<
+        Goal,
+        // Mirrors the column-scoped INSERT grant in the migration. id,
+        // created_at, updated_at and completed_at are owned by
+        // defaults/triggers; status/progress_percent always start at their
+        // column defaults ('active' / 0) on create.
+        {
+          user_id: string;
+          title: string;
+          description?: string;
+          category?: string | null;
+          target_date?: string | null;
+        },
+        // Mirrors the column-scoped UPDATE grant. user_id, id, the
+        // timestamps and completed_at are not client-writable; completed_at
+        // and a forced progress_percent=100 are applied by the
+        // apply_goal_completion_status() trigger on a status transition.
+        Partial<
+          Pick<
+            Goal,
+            | "title"
+            | "description"
+            | "category"
+            | "target_date"
+            | "status"
+            | "progress_percent"
+          >
+        >
+      >;
+      goal_milestones: TableDefinition<
+        GoalMilestone,
+        // Read-only for clients. Rows are created only by
+        // add_goal_milestone() and changed only by toggle_goal_milestone().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      habits: TableDefinition<
+        Habit,
+        // Mirrors the column-scoped INSERT grant. id, created_at,
+        // updated_at and archived_at are owned by defaults/triggers;
+        // is_active always starts true on create.
+        {
+          user_id: string;
+          name: string;
+          description?: string;
+          frequency: HabitFrequency;
+          target_per_period?: number;
+        },
+        // Mirrors the column-scoped UPDATE grant. user_id, id, the
+        // timestamps and archived_at are not client-writable; archived_at is
+        // applied by the apply_habit_archived_at() trigger whenever
+        // is_active changes.
+        Partial<
+          Pick<
+            Habit,
+            "name" | "description" | "frequency" | "target_per_period" | "is_active"
+          >
+        >
+      >;
+      habit_checkins: TableDefinition<
+        HabitCheckin,
+        // Read-only for clients. Rows are created/updated only by
+        // check_in_habit() and removed only by undo_habit_checkin().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      journal_entries: TableDefinition<
+        JournalEntry,
+        // Mirrors the column-scoped INSERT grant. id, created_at and
+        // updated_at are owned by defaults/trigger. goal_id / habit_id /
+        // prime_assignment_id are re-validated for same-owner integrity by
+        // the enforce_journal_entry_ownership() trigger regardless of what
+        // is sent here.
+        {
+          user_id: string;
+          title?: string | null;
+          body: string;
+          mood?: JournalMood | null;
+          entry_date?: string;
+          goal_id?: number | null;
+          habit_id?: number | null;
+          prime_assignment_id?: number | null;
+        },
+        // Mirrors the column-scoped UPDATE grant. user_id, id and the
+        // timestamps are not client-writable.
+        Partial<
+          Pick<
+            JournalEntry,
+            | "title"
+            | "body"
+            | "mood"
+            | "entry_date"
+            | "goal_id"
+            | "habit_id"
+            | "prime_assignment_id"
+          >
+        >
       >;
     };
     Views: Record<string, never>;
@@ -1128,6 +1322,27 @@ export type Database = {
       get_post_community: {
         Args: { p_post_id: number };
         Returns: PostCommunityRow[];
+      };
+      add_goal_milestone: {
+        Args: { p_goal_id: number; p_title: string };
+        Returns: number;
+      };
+      toggle_goal_milestone: {
+        Args: { p_milestone_id: number };
+        Returns: ToggledGoalMilestone[];
+      };
+      check_in_habit: {
+        Args: {
+          p_habit_id: number;
+          p_checkin_date?: string;
+          p_value?: number;
+          p_note?: string | null;
+        };
+        Returns: HabitCheckinRow[];
+      };
+      undo_habit_checkin: {
+        Args: { p_habit_id: number; p_checkin_date?: string };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

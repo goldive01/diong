@@ -60,50 +60,105 @@ This document describes the Diong data model. Phase 3 tables are implemented by 
 - Useful indexes: `user_id`; `completion_date`; unique `(user_id, prime_assignment_id)`.
 - Validation rules: Prevent duplicate completion for the same assignment; optional note length limit.
 
-## journal_entries
+## goals (implemented)
 
-- Purpose: Store private user reflections.
-- Important fields: `id`, `user_id`, `title`, `body`, `entry_date`, `prime_assignment_id`, `goal_id`, `habit_id`, `created_at`, `updated_at`.
-- Relationship to users: Many entries belong to one user; optional links to user's own Prime assignment, goal, or habit.
-- Privacy requirements: Strictly private to owner.
-- Useful indexes: `user_id`; `(user_id, entry_date)`; `prime_assignment_id`.
-- Validation rules: Body required; title optional with length limit; linked records must belong to same user.
+- Implemented by `supabase/migrations/202609130001_goals_habits_journal.sql`
+  (Pass 6). See `docs/GOALS_HABITS_JOURNAL.md`.
+- Purpose: A private personal goal.
+- Fields: `id`, `user_id`, `title`, `description`, `category`, `status`,
+  `target_date`, `progress_percent`, `created_at`, `updated_at`,
+  `completed_at`.
+- Relationship to users: `user_id → auth.users` (cascade). Strictly
+  owner-only — no shared or public read path.
+- Privacy: Owner-only `select`/`insert`/`update`; no `delete` grant at all —
+  a goal is archived (`status = 'archived'`), never hard-deleted.
+- Indexes: `(user_id, status, created_at desc)`; unique `(id, user_id)`
+  (the composite-FK target for `goal_milestones`).
+- Validation: title 1–120 chars; description ≤ 3000; category 1–60 chars
+  when present; `status` CHECKed against `active`/`paused`/`completed`/
+  `archived`; `progress_percent` 0–100; a CHECK
+  (`goals_completed_progress_full`) ties `status = 'completed'` to
+  `progress_percent = 100`. `completed_at` is system-managed by the
+  `apply_goal_completion_status()` trigger — never client-writable.
 
-## goals
+## goal_milestones (implemented)
 
-- Purpose: Store personal goals.
-- Important fields: `id`, `user_id`, `title`, `description`, `status`, `target_date`, `completed_at`, `archived_at`, `created_at`, `updated_at`.
-- Relationship to users: Many goals belong to one user.
-- Privacy requirements: Private to owner in MVP.
-- Useful indexes: `user_id`; `(user_id, status)`; `target_date`.
-- Validation rules: Title required; status from allowed values; target date optional.
+- Implemented by `supabase/migrations/202609130001_goals_habits_journal.sql`.
+- Purpose: An ordered, togglable step within a goal.
+- Fields: `id`, `goal_id`, `user_id`, `title`, `position`, `is_completed`,
+  `completed_at`, `created_at`.
+- Relationship to users: Composite foreign key `(goal_id, user_id) →
+  goals(id, user_id)` — a milestone's ownership is structurally guaranteed
+  to match its goal's owner. `on delete cascade`.
+- Privacy: Owner-only `select`. Read-only for clients otherwise — rows are
+  created only by `add_goal_milestone()` and changed only by
+  `toggle_goal_milestone()` (both `SECURITY DEFINER` RPCs); there is no
+  direct `insert`/`update`/`delete` grant.
+- Indexes: `(goal_id, position)`.
+- Validation: title 1–200 chars; `position` is always server-computed
+  (`max(position) + 1`), never client-supplied.
 
-## goal_updates
+## habits (implemented)
 
-- Purpose: Store progress notes for goals.
-- Important fields: `id`, `user_id`, `goal_id`, `body`, `created_at`, `updated_at`.
-- Relationship to users: Many updates belong to one goal and one user.
-- Privacy requirements: Private to owner in MVP.
-- Useful indexes: `goal_id`; `user_id`; `created_at`.
-- Validation rules: Body required; goal must belong to same user.
+- Implemented by `supabase/migrations/202609130001_goals_habits_journal.sql`.
+- Purpose: A private, repeatable habit definition.
+- Fields: `id`, `user_id`, `name`, `description`, `frequency`,
+  `target_per_period`, `is_active`, `created_at`, `updated_at`,
+  `archived_at`.
+- Relationship to users: `user_id → auth.users` (cascade).
+- Privacy: Owner-only `select`/`insert`/`update`; no `delete` grant — a
+  habit is archived (`is_active = false`), never hard-deleted.
+- Indexes: `(user_id, is_active)`; unique `(id, user_id)` (the
+  composite-FK target for `habit_checkins`).
+- Validation: name 1–120 chars; description ≤ 1000; `frequency` CHECKed
+  against `daily`/`weekly` only (V1 avoids custom schedules);
+  `target_per_period` 1–100. `archived_at` is system-managed by the
+  `apply_habit_archived_at()` trigger — never client-writable.
 
-## habits
+## habit_checkins (implemented)
 
-- Purpose: Store habit definitions.
-- Important fields: `id`, `user_id`, `name`, `description`, `cadence`, `is_active`, `created_at`, `updated_at`.
-- Relationship to users: Many habits belong to one user.
-- Privacy requirements: Private to owner in MVP.
-- Useful indexes: `user_id`; `(user_id, is_active)`.
-- Validation rules: Name required; cadence from allowed values; active habits can be logged.
+- Implemented by `supabase/migrations/202609130001_goals_habits_journal.sql`.
+- Purpose: One check-in for one habit on one calendar date.
+- Fields: `id`, `habit_id`, `user_id`, `checkin_date`, `value`, `note`,
+  `created_at`.
+- Relationship to users: Composite foreign key `(habit_id, user_id) →
+  habits(id, user_id)` — a check-in's ownership is structurally guaranteed
+  to match its habit's owner. `on delete cascade`.
+- Privacy: Owner-only `select`. Read-only for clients otherwise — rows are
+  created/updated only by `check_in_habit()` and removed only by
+  `undo_habit_checkin()` (both `SECURITY DEFINER` RPCs, upserting on
+  conflict so a same-day correction never needs an explicit undo first).
+- Indexes: `(habit_id, checkin_date desc)`; `(user_id, checkin_date desc)`;
+  unique `(habit_id, checkin_date)` — one row per habit per day.
+- Validation: `value` 1–1000 (default 1 — a plain "done today" tap); `note`
+  ≤ 500 chars when present; a future `checkin_date` is rejected by the RPC.
+  Streak calculation (current/longest, daily or weekly) is pure TypeScript
+  (`src/lib/habits/habit-streak.ts`), not stored or computed in SQL.
 
-## habit_logs
+## journal_entries (implemented)
 
-- Purpose: Record habit completions by date.
-- Important fields: `id`, `user_id`, `habit_id`, `log_date`, `completed_at`, `note`.
-- Relationship to users: Many logs belong to one habit and one user.
-- Privacy requirements: Private to owner.
-- Useful indexes: `habit_id`; `(user_id, log_date)`; unique `(habit_id, log_date)`.
-- Validation rules: Prevent duplicate logs for same habit/date; habit must belong to same user.
+- Implemented by `supabase/migrations/202609130001_goals_habits_journal.sql`.
+- Purpose: A strictly private journal entry, optionally linked to one goal,
+  one habit and/or one Daily Prime assignment.
+- Fields: `id`, `user_id`, `title`, `body`, `mood`, `entry_date`, `goal_id`,
+  `habit_id`, `prime_assignment_id`, `created_at`, `updated_at`.
+- Relationship to users: `user_id → auth.users` (cascade). `goal_id` /
+  `habit_id` / `prime_assignment_id` are plain single-column foreign keys
+  (`on delete set null`) to `goals(id)` / `habits(id)` /
+  `prime_assignments(id)`; same-owner integrity for all three is enforced
+  by the `enforce_journal_entry_ownership()` `BEFORE INSERT OR UPDATE`
+  trigger (a `42501` error if a linked id belongs to a different user),
+  not by a composite foreign key.
+- Privacy: Strictly owner-only `select`/`insert`/`update`/`delete` — the one
+  table in this pass with a `delete` grant; nothing else references a
+  journal entry, so a confirmed, owner-only hard delete is safe. Never
+  surfaced in the feed, Discover, global Search, a public profile,
+  communities or messages.
+- Indexes: `(user_id, entry_date desc)`.
+- Validation: body 1–10000 chars; title 1–200 chars when present; `mood`
+  CHECKed against a fixed, self-reported, non-diagnostic list (`calm`,
+  `focused`, `energised`, `neutral`, `stressed`, `low`, `grateful`,
+  `reflective`) or `null`.
 
 ## posts (implemented)
 

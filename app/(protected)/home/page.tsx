@@ -3,13 +3,25 @@ import { requireCompletedProfile } from "@/src/lib/auth";
 import { getInterestNames } from "@/src/lib/profile-data";
 import { getTopConnectionNudge } from "@/src/lib/connections/connections-data";
 import { HomeConnectionNudge } from "@/src/components/connections/home-connection-nudge";
+import { listGoals } from "@/src/lib/goals/goals-data";
+import { getHabitTodaySummary } from "@/src/lib/habits/habits-data";
+import { todayIsoDate } from "@/src/lib/habits/habit-validation";
+import { HomeFocusPanel } from "@/src/components/growth/home-focus-panel";
+
+const HOME_GOALS_LIMIT = 3;
 
 export default async function HomePage() {
   const { supabase, userId, profile } = await requireCompletedProfile();
-  const [interestNames, connectionNudge] = await Promise.all([
+  const today = todayIsoDate();
+  const [interestNames, connectionNudge, goals, habitSummary] = await Promise.all([
     getInterestNames(supabase, userId),
     getTopConnectionNudge(supabase),
+    listGoals(supabase, userId),
+    getHabitTodaySummary(supabase, userId, today),
   ]);
+  const activeGoals = goals
+    .filter((goal) => goal.status === "active")
+    .slice(0, HOME_GOALS_LIMIT);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-10 sm:px-6 sm:py-14">
@@ -31,6 +43,10 @@ export default async function HomePage() {
             {interestNames.map((name) => <li key={name} className="rounded-full bg-white px-3 py-1.5 text-sm font-medium">{name}</li>)}
           </ul>
         </aside>
+      </section>
+
+      <section className="mt-6" aria-label="Your focus">
+        <HomeFocusPanel activeGoals={activeGoals} habitSummary={habitSummary} />
       </section>
 
       <section className="mt-6" aria-label="Connections">
