@@ -150,9 +150,11 @@ file into the SQL Editor once, in order:
 13. `202609130001_goals_habits_journal.sql`
 14. `202609130002_media_profile_polish.sql` — **written, not yet applied to
     any Supabase project.** See `docs/MEDIA_PROFILE_STORAGE.md`.
+15. `202609140001_search_and_profile_read_performance.sql` — **written, not
+    yet applied to any Supabase project.** See `docs/DATABASE_PERFORMANCE.md`.
 
 Each file is a single transaction and is **not** idempotent — never re-run a
-migration that already succeeded. Migrations 2–14 depend on earlier ones. Row
+migration that already succeeded. Migrations 2–15 depend on earlier ones. Row
 Level Security is enabled on every user-owned table; all writes go through
 column-scoped grants or `SECURITY DEFINER` RPCs.
 
@@ -228,6 +230,7 @@ ship now (see V1 capabilities).
 - `docs/MEDIA_PROFILE_STORAGE.md` — profile/post/community media schema, Storage bucket, RLS, privacy model, verification
 - `docs/PWA_PERFORMANCE.md` — PWA manifest/icons/service-worker foundation, image sizing, privacy limitations
 - `docs/UX_RELIABILITY_ACCESSIBILITY.md` — loading/error/404 architecture, pending states, accessibility, mobile UX, empty states, safe-error policy
+- `docs/DATABASE_PERFORMANCE.md` — read-path query-flow audit, N+1 findings, indexes, pagination bounds, migration
 - `docs/DAILY_PRIME_HISTORY.md` — Prime reflections / history / progress
 - `docs/DEPLOYMENT.md` — deployment
 - `docs/RELEASE_CHECKLIST.md` — launch checklist

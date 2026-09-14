@@ -26,17 +26,18 @@ export default async function ProfilePage({
   if (!social) notFound();
 
   // When the viewer has blocked the owner, the panel shows a restrained
-  // "blocked" state and interests / activity are withheld.
-  const interestNames = social.viewer_blocked
-    ? []
-    : await getInterestNames(supabase, social.id);
-
-  // Only posts this viewer is authorised to see — list_user_posts applies the
-  // same visibility + block model as the feed, and returns nothing when a block
-  // stands between the two accounts.
-  const posts = social.viewer_blocked
-    ? { posts: [], nextCursor: null }
-    : await listUserPosts(supabase, social.id, { limit: FEED_PAGE_SIZE });
+  // "blocked" state and interests / activity are withheld. Both fetches
+  // depend only on social.id (already resolved), not on each other, so run
+  // them concurrently rather than one after the other.
+  const [interestNames, posts] = social.viewer_blocked
+    ? [[], { posts: [], nextCursor: null }]
+    : await Promise.all([
+        getInterestNames(supabase, social.id),
+        // Only posts this viewer is authorised to see — list_user_posts
+        // applies the same visibility + block model as the feed, and returns
+        // nothing when a block stands between the two accounts.
+        listUserPosts(supabase, social.id, { limit: FEED_PAGE_SIZE }),
+      ]);
 
   const coverUrl = getPublicMediaUrl(social.cover_path);
 

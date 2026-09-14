@@ -646,6 +646,12 @@ export type PostCommunityRow = {
   name: string;
 };
 
+// Row shape returned by public.get_interest_names() — Pass 8 Step 3, replaces
+// a two-step user_interests -> interests client read with one RPC call.
+export type InterestNameRow = {
+  name: string;
+};
+
 // ---------------------------------------------------------------------------
 // Goals, Habits, Journal — Pass 6 (private personal-development layer)
 // ---------------------------------------------------------------------------
@@ -1383,6 +1389,10 @@ export type Database = {
       get_post_community: {
         Args: { p_post_id: number };
         Returns: PostCommunityRow[];
+      };
+      get_interest_names: {
+        Args: { p_user_id: string };
+        Returns: InterestNameRow[];
       };
       add_goal_milestone: {
         Args: { p_goal_id: number; p_title: string };

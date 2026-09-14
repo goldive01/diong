@@ -23,14 +23,17 @@ export default async function EditJournalEntryPage({
 
   if (!Number.isSafeInteger(id) || id <= 0) notFound();
 
-  const entry = await getJournalEntry(supabase, userId, id);
-  if (!entry) notFound();
-
-  const [goalOptions, habitOptions, primeOptions] = await Promise.all([
+  // The entry lookup and the three option lists all depend only on
+  // userId/id (already resolved), not on each other — fetch concurrently.
+  // The option lists go unused in the rare not-found case below, but that's
+  // a cheap trade for one fewer round-trip in the common case.
+  const [entry, goalOptions, habitOptions, primeOptions] = await Promise.all([
+    getJournalEntry(supabase, userId, id),
     listGoalOptions(supabase, userId),
     listHabitOptions(supabase, userId),
     listPrimeAssignmentOptions(supabase, userId),
   ]);
+  if (!entry) notFound();
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-10 sm:px-6 sm:py-14">

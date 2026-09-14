@@ -28,12 +28,13 @@ export default async function ConversationPage({
   const conversation = await getConversation(supabase, id);
   if (!conversation) notFound();
 
-  // Opening a conversation marks it read.
-  await markConversationRead(supabase, conversation.id);
-
-  const page = await listMessages(supabase, conversation.id, {
-    limit: PAGE_SIZE,
-  });
+  // Marking the conversation read and loading its messages both depend only
+  // on conversation.id (already resolved) — not on each other — so run them
+  // concurrently instead of back-to-back.
+  const [, page] = await Promise.all([
+    markConversationRead(supabase, conversation.id),
+    listMessages(supabase, conversation.id, { limit: PAGE_SIZE }),
+  ]);
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col px-5 py-6 sm:px-6 sm:py-10">

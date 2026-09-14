@@ -26,8 +26,11 @@ export default async function PostDetailPage({
   const post = await getPost(supabase, postId);
   if (!post) notFound();
 
-  const comments = await listComments(supabase, post.id);
-  const communityBadge = await getPostCommunity(supabase, post.id);
+  // Both depend only on post.id, not on each other — fetch concurrently.
+  const [comments, communityBadge] = await Promise.all([
+    listComments(supabase, post.id),
+    getPostCommunity(supabase, post.id),
+  ]);
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-10 sm:px-6 sm:py-14">
