@@ -5,16 +5,21 @@ import { redirect } from "next/navigation";
 import { requireCompletedProfile } from "@/src/lib/auth";
 import { listUserPosts, type FeedPost } from "@/src/lib/social/post-data";
 import {
+  attachPostMedia,
   bookmarkPost,
   createComment,
   deleteComment,
   editComment,
   likePost,
   removeBookmark,
+  removePostMedia,
   softDeletePost,
   unlikePost,
   updatePost,
 } from "@/src/lib/social/post-mutations";
+import { isOwnedPath } from "@/src/lib/media/storage-paths";
+import { safeDeleteObject } from "@/src/lib/media/storage-server";
+import type { MediaActionResult } from "@/src/lib/media/media-action-result";
 import {
   clampLimit,
   hasErrors,
@@ -288,6 +293,81 @@ export async function deletePostAction(
 
   revalidatePost(id);
   redirect("/feed");
+}
+
+// ---------------------------------------------------------------------------
+// Post images (Pass 7). The browser has already uploaded the object directly
+// to Storage under posts/{userId}/{postId}/... — this action only validates
+// the path prefix and persists the attachment via attach_post_media(), which
+// re-checks ownership, mime type, size and the 4-image ceiling itself. Used
+// both right after createPost() resolves and when adding an image during
+// edit — the RPC does not distinguish the two.
+// ---------------------------------------------------------------------------
+
+export async function attachPostMediaAction(
+  postId: number,
+  input: {
+    storagePath: string;
+    mimeType: string;
+    sizeBytes: number;
+    width: number | null;
+    height: number | null;
+    altText: string | null;
+  },
+): Promise<MediaActionResult> {
+  const id = toSafeId(postId);
+  if (id === null) return { status: "error", message: UNAVAILABLE };
+
+  const { supabase, userId } = await requireCompletedProfile();
+
+  const expectedPrefix = `posts/${userId}/${id}/`;
+  if (!isOwnedPath(input.storagePath, expectedPrefix)) {
+    return { status: "error", message: "This image cannot be attached." };
+  }
+
+  const result = await attachPostMedia(supabase, {
+    postId: id,
+    storagePath: input.storagePath,
+    mimeType: input.mimeType,
+    sizeBytes: input.sizeBytes,
+    width: input.width,
+    height: input.height,
+    altText: input.altText,
+  });
+
+  if (result.status === "error") {
+    await safeDeleteObject(supabase, input.storagePath);
+    return {
+      status: "error",
+      message: result.reason === "invalid" ? "This image could not be added." : GENERIC,
+    };
+  }
+
+  revalidatePost(id);
+  return { status: "success", message: "Image added." };
+}
+
+/** Removes one of the caller's own images from a post, DB row first, then Storage. */
+export async function removePostMediaAction(
+  postId: number,
+  mediaId: number,
+): Promise<MediaActionResult> {
+  const id = toSafeId(postId);
+  if (id === null) return { status: "error", message: UNAVAILABLE };
+
+  const { supabase } = await requireCompletedProfile();
+  const result = await removePostMedia(supabase, mediaId);
+
+  if (result.status === "error") {
+    return {
+      status: "error",
+      message: result.reason === "not_available" ? "This image is not available." : GENERIC,
+    };
+  }
+
+  await safeDeleteObject(supabase, result.data);
+  revalidatePost(id);
+  return { status: "success", message: "Image removed." };
 }
 
 // ---------------------------------------------------------------------------

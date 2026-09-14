@@ -6,12 +6,16 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+// avatar_url predates Pass 7 and is unused by the application — avatar_path /
+// cover_path are the Pass 7 Supabase Storage-backed columns.
 export type Profile = {
   id: string;
   username: string | null;
   display_name: string | null;
   bio: string | null;
   avatar_url: string | null;
+  avatar_path: string | null;
+  cover_path: string | null;
   onboarding_completed: boolean;
   created_at: string;
   updated_at: string;
@@ -210,6 +214,8 @@ export type SocialProfileRow = {
   is_self: boolean;
   viewer_follows: boolean;
   viewer_blocked: boolean;
+  avatar_path: string | null;
+  cover_path: string | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -263,9 +269,38 @@ export type PostBookmark = {
   created_at: string;
 };
 
+// One image attached to a post (Pass 7). Returned inline as a jsonb array by
+// every post-row RPC — never fetched with a separate per-post query.
+export type PostMediaItem = {
+  id: number;
+  storage_path: string;
+  width: number | null;
+  height: number | null;
+  position: number;
+  alt_text: string | null;
+};
+
+// public.post_media table row (Pass 7). Not read directly by the client —
+// every read goes through the post-row RPCs above; this type exists for
+// completeness / any server-side code that needs the full row shape.
+export type PostMedia = {
+  id: number;
+  post_id: number;
+  user_id: string;
+  storage_path: string;
+  mime_type: string;
+  size_bytes: number;
+  width: number | null;
+  height: number | null;
+  position: number;
+  alt_text: string | null;
+  created_at: string;
+};
+
 // Row shape shared by list_feed / get_post / list_user_posts. Author fields are
 // joined; engagement counts and viewer flags are computed server-side so a
-// caller never issues a per-post follow-up query.
+// caller never issues a per-post follow-up query. author_avatar_path / media
+// added in Pass 7.
 export type FeedPostRow = {
   id: number;
   user_id: string;
@@ -281,6 +316,8 @@ export type FeedPostRow = {
   viewer_liked: boolean;
   viewer_bookmarked: boolean;
   is_author: boolean;
+  author_avatar_path: string | null;
+  media: PostMediaItem[];
 };
 
 // list_bookmarks adds the bookmark timestamp used for keyset pagination.
@@ -288,6 +325,7 @@ export type BookmarkPostRow = FeedPostRow & { bookmarked_at: string };
 
 // Row shape returned by list_post_comments. `body` is null when the comment is
 // deleted (a tombstone kept only to preserve a live reply's context).
+// author_avatar_path added in Pass 7 (comments carry no images of their own).
 export type PostCommentRow = {
   id: number;
   parent_comment_id: number | null;
@@ -299,6 +337,7 @@ export type PostCommentRow = {
   edited_at: string | null;
   is_deleted: boolean;
   is_author: boolean;
+  author_avatar_path: string | null;
 };
 
 export type PostEngagementRow = {
@@ -353,11 +392,13 @@ export type NotificationRow = {
   target_available: boolean;
   read_at: string | null;
   created_at: string;
+  actor_avatar_path: string | null;
 };
 
 // Row shape shared by discover_people() / search_people(). viewer_follows is
 // always false from discover_people() (it already excludes anyone the viewer
 // follows) but real per-row state from search_people(), which does not.
+// avatar_path added in Pass 7.
 export type DiscoverPersonRow = {
   id: string;
   username: string;
@@ -365,6 +406,7 @@ export type DiscoverPersonRow = {
   bio: string | null;
   viewer_follows: boolean;
   total_count: number;
+  avatar_path: string | null;
 };
 
 export type DiscoverPeopleRow = DiscoverPersonRow & {
@@ -409,6 +451,7 @@ export type ConversationSummaryRow = {
   last_message_body: string | null;
   last_message_at: string | null;
   unread: boolean;
+  other_avatar_path: string | null;
 };
 
 // Row shape returned by public.get_conversation(). No row at all when the
@@ -420,6 +463,7 @@ export type ConversationRow = {
   other_username: string;
   other_display_name: string;
   created_at: string;
+  other_avatar_path: string | null;
 };
 
 // Row shape returned by public.list_messages(), newest first.
@@ -465,6 +509,8 @@ export type Community = {
   created_at: string;
   updated_at: string;
   is_active: boolean;
+  avatar_path: string | null;
+  cover_path: string | null;
 };
 
 export type CommunityMember = {
@@ -518,6 +564,8 @@ export type CommunityRow = {
   member_count: number;
   created_at: string;
   viewer_role: CommunityRole | null;
+  avatar_path: string | null;
+  cover_path: string | null;
 };
 
 // Row shape returned by public.list_my_communities() — the viewer's role is
@@ -530,6 +578,7 @@ export type CommunityMyRow = {
   member_count: number;
   viewer_role: CommunityRole;
   total_count: number;
+  avatar_path: string | null;
 };
 
 // Row shape returned by public.list_discover_communities() — active
@@ -541,6 +590,7 @@ export type CommunityDiscoverRow = {
   description: string;
   member_count: number;
   total_count: number;
+  avatar_path: string | null;
 };
 
 // Row shape returned by public.search_communities().
@@ -552,6 +602,7 @@ export type CommunitySearchRow = {
   member_count: number;
   viewer_joined: boolean;
   total_count: number;
+  avatar_path: string | null;
 };
 
 // Row shape returned by public.list_community_members().
@@ -562,6 +613,7 @@ export type CommunityMemberRow = {
   role: CommunityRole;
   joined_at: string;
   total_count: number;
+  avatar_path: string | null;
 };
 
 // Row shape returned by public.list_community_bans() (owner/moderator only).
@@ -708,6 +760,8 @@ export type Database = {
           display_name?: string | null;
           bio?: string | null;
           avatar_url?: string | null;
+          avatar_path?: string | null;
+          cover_path?: string | null;
           onboarding_completed?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -833,6 +887,13 @@ export type Database = {
         PostBookmark,
         // Read-only for clients (own rows only). Written only by bookmark_post()
         // / remove_bookmark().
+        Record<string, never>,
+        Record<string, never>
+      >;
+      post_media: TableDefinition<
+        PostMedia,
+        // Read-only for clients. Rows are created only by attach_post_media()
+        // and removed only by remove_post_media() (Pass 7).
         Record<string, never>,
         Record<string, never>
       >;
@@ -1342,6 +1403,30 @@ export type Database = {
       };
       undo_habit_checkin: {
         Args: { p_habit_id: number; p_checkin_date?: string };
+        Returns: undefined;
+      };
+      attach_post_media: {
+        Args: {
+          p_post_id: number;
+          p_storage_path: string;
+          p_mime_type: string;
+          p_size_bytes: number;
+          p_width?: number | null;
+          p_height?: number | null;
+          p_alt_text?: string | null;
+        };
+        Returns: number;
+      };
+      remove_post_media: {
+        Args: { p_media_id: number };
+        Returns: string;
+      };
+      set_community_avatar: {
+        Args: { p_community_id: number; p_storage_path?: string | null };
+        Returns: undefined;
+      };
+      set_community_cover: {
+        Args: { p_community_id: number; p_storage_path?: string | null };
         Returns: undefined;
       };
     };

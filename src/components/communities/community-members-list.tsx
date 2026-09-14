@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CommunityMember } from "@/src/lib/communities/community-data";
 import { roleLabel } from "@/src/lib/communities/community-labels";
+import { Avatar } from "@/src/components/media/avatar";
 
 // Read-only member list for /communities/[slug]/members. Only public profile
 // fields (username, display name, role, joined date) — never email or auth
@@ -30,11 +31,14 @@ export function CommunityMembersList({
         >
           <Link
             href={`/profile/${member.username}`}
-            className="min-w-0 font-semibold text-[#1d2420] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+            className="flex min-w-0 items-center gap-3 font-semibold text-[#1d2420] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
           >
-            <span className="block truncate">{member.displayName}</span>
-            <span className="block truncate text-sm font-normal text-[#657052]">
-              @{member.username}
+            <Avatar avatarPath={member.avatarPath} displayName={member.displayName} size={36} />
+            <span className="min-w-0">
+              <span className="block truncate">{member.displayName}</span>
+              <span className="block truncate text-sm font-normal text-[#657052]">
+                @{member.username}
+              </span>
             </span>
           </Link>
           <span

@@ -4,6 +4,7 @@ import type { SearchPerson } from "@/src/lib/social/search-data";
 import { truncateBio } from "@/src/lib/social/social-labels";
 import { sharedInterestLabel } from "@/src/lib/social/discover-labels";
 import { FollowButton } from "@/src/components/social/follow-button";
+import { Avatar } from "@/src/components/media/avatar";
 import {
   followProfile,
   unfollowProfile,
@@ -29,11 +30,11 @@ export function DiscoverPersonCard({
       <div className="flex items-start gap-3">
         <Link
           href={`/profile/${person.username}`}
-          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#dfe6d2] text-sm font-semibold text-[#465331] outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+          className="shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
           aria-hidden="true"
           tabIndex={-1}
         >
-          {person.displayName.charAt(0).toUpperCase()}
+          <Avatar avatarPath={person.avatarPath} displayName={person.displayName} size={40} />
         </Link>
         <div className="min-w-0 flex-1">
           <Link

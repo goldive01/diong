@@ -21,6 +21,7 @@ export type NotificationItem = {
   targetAvailable: boolean;
   readAt: string | null;
   createdAt: string;
+  actorAvatarPath: string | null;
 };
 
 export type NotificationPage = {
@@ -41,6 +42,7 @@ function mapNotification(row: NotificationRow): NotificationItem {
     targetAvailable: Boolean(row.target_available),
     readAt: row.read_at,
     createdAt: row.created_at,
+    actorAvatarPath: row.actor_avatar_path,
   };
 }
 

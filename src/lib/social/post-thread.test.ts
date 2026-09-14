@@ -14,6 +14,7 @@ function row(overrides: Partial<PostCommentRow>): PostCommentRow {
     edited_at: null,
     is_deleted: false,
     is_author: false,
+    author_avatar_path: null,
     ...overrides,
   };
 }

@@ -5,6 +5,7 @@ import type {
   FeedPostRow,
   PostCommentRow,
   PostEngagementRow,
+  PostMediaItem,
   PostType,
   PostVisibility,
 } from "@/src/types/database";
@@ -36,6 +37,8 @@ export type FeedPost = {
   viewerLiked: boolean;
   viewerBookmarked: boolean;
   isAuthor: boolean;
+  authorAvatarPath: string | null;
+  media: PostMediaItem[];
 };
 
 export type FeedPage = {
@@ -63,6 +66,8 @@ export function mapPost(row: FeedPostRow): FeedPost {
     viewerLiked: Boolean(row.viewer_liked),
     viewerBookmarked: Boolean(row.viewer_bookmarked),
     isAuthor: Boolean(row.is_author),
+    authorAvatarPath: row.author_avatar_path,
+    media: row.media ?? [],
   };
 }
 
@@ -197,6 +202,7 @@ export type PostCommentView = {
   editedAt: string | null;
   isDeleted: boolean;
   isAuthor: boolean;
+  authorAvatarPath: string | null;
 };
 
 export type CommentNode = {
@@ -216,6 +222,7 @@ function mapComment(row: PostCommentRow): PostCommentView {
     editedAt: row.edited_at,
     isDeleted: Boolean(row.is_deleted),
     isAuthor: Boolean(row.is_author),
+    authorAvatarPath: row.author_avatar_path,
   };
 }
 

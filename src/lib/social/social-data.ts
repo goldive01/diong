@@ -22,6 +22,7 @@ export type PersonSummary = {
   username: string;
   displayName: string;
   bio: string | null;
+  avatarPath: string | null;
 };
 
 export type FollowListPage = {
@@ -209,7 +210,7 @@ async function listFollowPage(
 
   const { data: profiles, error: profileError } = await supabase
     .from("profiles")
-    .select("id, username, display_name, bio")
+    .select("id, username, display_name, bio, avatar_path")
     .in("id", ids)
     .eq("onboarding_completed", true);
 
@@ -235,6 +236,7 @@ async function listFollowPage(
       username: profile.username as string,
       displayName: profile.display_name as string,
       bio: profile.bio,
+      avatarPath: profile.avatar_path,
     }));
 
   return { people, total, page, pageSize, hasPrevious: page > 1, hasNext };

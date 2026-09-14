@@ -83,6 +83,12 @@ and makes no guaranteed-outcome claims.
   profile, communities or messages. (Pass 6 —
   `docs/GOALS_HABITS_JOURNAL.md`.)
 - Profile settings (username, display name, bio).
+- **Media** — profile avatar and cover, up to 4 images per post, and
+  community avatar/cover (owner-only). Browser-to-Storage uploads, relative
+  paths only, a public `diong-public-media` Storage bucket for intentionally
+  public/social images only. (Pass 7 — `docs/MEDIA_PROFILE_STORAGE.md`; code
+  complete, requires applying migration 14 above, **not yet applied to any
+  Supabase project**.)
 - Privacy Notice and Terms of Use.
 - Branded 404, error boundaries and route-transition loading states.
 
@@ -142,9 +148,11 @@ file into the SQL Editor once, in order:
 11. `202609120002_direct_messages.sql`
 12. `202609120003_communities.sql`
 13. `202609130001_goals_habits_journal.sql`
+14. `202609130002_media_profile_polish.sql` — **written, not yet applied to
+    any Supabase project.** See `docs/MEDIA_PROFILE_STORAGE.md`.
 
 Each file is a single transaction and is **not** idempotent — never re-run a
-migration that already succeeded. Migrations 2–13 depend on earlier ones. Row
+migration that already succeeded. Migrations 2–14 depend on earlier ones. Row
 Level Security is enabled on every user-owned table; all writes go through
 column-scoped grants or `SECURITY DEFINER` RPCs.
 
@@ -196,13 +204,14 @@ and [`/terms`](app/terms/page.tsx).
 
 ## Deferred to V1.1
 
-Not yet built: post images / media, an AI Coach, Google integrations,
-payments, and a native mobile app. These are planned for later releases and
-are not advertised as available. The follow / block **social graph**, the
+Not yet built: an AI Coach, Google integrations, payments, and a native
+mobile app. These are planned for later releases and are not advertised as
+available. The follow / block **social graph**, the
 **posts / feed / comments / likes / bookmarks** layer,
-**notifications, Discover & Search**, **direct messages**, **communities**
-and the private **Goals / Habits / Journal** layer all ship now (see V1
-capabilities).
+**notifications, Discover & Search**, **direct messages**, **communities**,
+the private **Goals / Habits / Journal** layer, and **media** (profile
+avatar/cover, post images, community branding — pending migration 14) all
+ship now (see V1 capabilities).
 
 ## Documentation
 
@@ -216,6 +225,7 @@ capabilities).
 - `docs/DIRECT_MESSAGES.md` — conversations / messages schema, RPCs, blocking behaviour, verification
 - `docs/COMMUNITIES_MODERATION.md` — communities / membership / moderation / reports schema, RPCs, RLS, verification
 - `docs/GOALS_HABITS_JOURNAL.md` — goals / milestones / habits / streaks / private journal schema, RLS, verification
+- `docs/MEDIA_PROFILE_STORAGE.md` — profile/post/community media schema, Storage bucket, RLS, privacy model, verification
 - `docs/DAILY_PRIME_HISTORY.md` — Prime reflections / history / progress
 - `docs/DEPLOYMENT.md` — deployment
 - `docs/RELEASE_CHECKLIST.md` — launch checklist

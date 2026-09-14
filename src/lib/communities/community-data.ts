@@ -31,6 +31,8 @@ export type CommunityDetail = {
   memberCount: number;
   createdAt: string;
   viewerRole: "owner" | "moderator" | "member" | null;
+  avatarPath: string | null;
+  coverPath: string | null;
 };
 
 function mapCommunityRow(row: CommunityRow): CommunityDetail {
@@ -46,6 +48,8 @@ function mapCommunityRow(row: CommunityRow): CommunityDetail {
     memberCount: row.member_count,
     createdAt: row.created_at,
     viewerRole: row.viewer_role,
+    avatarPath: row.avatar_path,
+    coverPath: row.cover_path,
   };
 }
 
@@ -79,6 +83,7 @@ export type CommunitySummary = {
   name: string;
   description: string;
   memberCount: number;
+  avatarPath: string | null;
 };
 
 export type MyCommunity = CommunitySummary & {
@@ -129,6 +134,7 @@ export async function listMyCommunities(
       description: row.description,
       memberCount: row.member_count,
       viewerRole: row.viewer_role,
+      avatarPath: row.avatar_path,
     }));
     return {
       communities,
@@ -170,6 +176,7 @@ export async function listDiscoverCommunities(
       name: row.name,
       description: row.description,
       memberCount: row.member_count,
+      avatarPath: row.avatar_path,
     }));
     return {
       communities,
@@ -213,6 +220,7 @@ export async function searchCommunities(
       description: row.description,
       memberCount: row.member_count,
       viewerJoined: row.viewer_joined,
+      avatarPath: row.avatar_path,
     }));
     return {
       communities,
@@ -236,6 +244,7 @@ export type CommunityMember = {
   displayName: string;
   role: "owner" | "moderator" | "member";
   joinedAt: string;
+  avatarPath: string | null;
 };
 
 export type CommunityMemberPage = {
@@ -278,6 +287,7 @@ export async function listCommunityMembers(
       displayName: row.display_name,
       role: row.role,
       joinedAt: row.joined_at,
+      avatarPath: row.avatar_path,
     }));
     return {
       members,

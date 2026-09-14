@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CommunitySummary } from "@/src/lib/communities/community-data";
 import { memberCountLabel, roleLabel } from "@/src/lib/communities/community-labels";
 import type { CommunityRole } from "@/src/types/database";
+import { Avatar } from "@/src/components/media/avatar";
 
 // One community card for /communities (joined + discover sections) and the
 // Discover / Search integrations. Shows name, a short description, member
@@ -25,13 +26,16 @@ export function CommunityCard({
       className="block rounded-2xl border border-[#e0dacd] bg-white p-4 transition hover:border-[#c7bfab] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate font-semibold text-[#1d2420]">
-            {community.name}
-          </p>
-          <p className="text-sm text-[#657052]">
-            {memberCountLabel(community.memberCount)}
-          </p>
+        <div className="flex min-w-0 items-start gap-3">
+          <Avatar avatarPath={community.avatarPath} displayName={community.name} size={40} />
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-[#1d2420]">
+              {community.name}
+            </p>
+            <p className="text-sm text-[#657052]">
+              {memberCountLabel(community.memberCount)}
+            </p>
+          </div>
         </div>
         <span
           className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${

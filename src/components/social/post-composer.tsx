@@ -17,16 +17,28 @@ import {
   POST_TYPE_LABEL,
   POST_VISIBILITY_LABEL,
 } from "@/src/lib/social/post-labels";
+import {
+  PostImagePicker,
+  type PostImagePickerHandle,
+} from "@/src/components/media/post-image-picker";
 
 // The calm feed composer. Controlled state, body preserved on error, pending
 // state, live length indicator, accessible errors, one explicit submit.
-export function PostComposer() {
+// Images (Pass 7): the post is created first (text-only), then any staged
+// images are uploaded and attached against the real postId — see
+// PostImagePicker. If an image fails to attach, the post itself still
+// exists; a warning names how many images did not attach rather than losing
+// the whole submission.
+export function PostComposer({ userId }: { userId: string }) {
   const [state, formAction, pending] = useActionState(
     createPost,
     initialPostFormState(),
   );
   const [values, setValues] = useState(EMPTY_POST_FORM);
+  const [imageWarning, setImageWarning] = useState("");
+  const [attaching, setAttaching] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const pickerRef = useRef<PostImagePickerHandle>(null);
 
   // Clear the body once per successful share. Keyed only on `state` (the
   // useActionState result), so this only re-runs when a *new* action result
@@ -45,6 +57,21 @@ export function PostComposer() {
   useEffect(() => {
     if (state.status === "success") {
       setValues((current) => ({ ...current, body: "" }));
+
+      const postId = state.createdPostId;
+      if (postId && pickerRef.current?.hasImages) {
+        setAttaching(true);
+        pickerRef.current.attachAll(postId).then(({ failed }) => {
+          setAttaching(false);
+          setImageWarning(
+            failed > 0
+              ? `${failed} image${failed === 1 ? "" : "s"} could not be added, but your post was shared.`
+              : "",
+          );
+        });
+      } else {
+        setImageWarning("");
+      }
     }
   }, [state]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -135,6 +162,14 @@ export function PostComposer() {
         </select>
       </div>
 
+      <PostImagePicker ref={pickerRef} userId={userId} disabled={pending || attaching} />
+
+      {imageWarning && (
+        <p role="alert" className="rounded-xl bg-[#fff8e6] px-4 py-3 text-sm text-[#6b5a1f]">
+          {imageWarning}
+        </p>
+      )}
+
       {state.status === "error" && state.message && (
         <p
           role="alert"
@@ -163,10 +198,10 @@ export function PostComposer() {
 
       <button
         type="submit"
-        disabled={pending || over || bodyLength === 0}
+        disabled={pending || attaching || over || bodyLength === 0}
         className="min-h-12 rounded-full bg-[#263b2d] px-6 font-semibold text-white transition hover:bg-[#1d3024] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {pending ? "Sharing…" : "Share"}
+        {pending ? "Sharing…" : attaching ? "Adding images…" : "Share"}
       </button>
     </form>
   );

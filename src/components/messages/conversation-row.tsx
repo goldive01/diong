@@ -4,6 +4,7 @@ import {
   formatMessageTimestamp,
   messageSnippet,
 } from "@/src/lib/messages/message-labels";
+import { Avatar } from "@/src/components/media/avatar";
 
 // One inbox row. Unread is marked with visible text ("New"), never colour
 // alone, matching NotificationRow. Message content is only ever shown here
@@ -27,12 +28,11 @@ export function ConversationRow({
       }
       className="flex items-start gap-3 rounded-2xl border border-[#e0dacd] bg-white p-4 outline-none transition hover:border-[#b9c3a3] focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/30"
     >
-      <span
-        aria-hidden="true"
-        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#dfe6d2] text-sm font-semibold text-[#465331]"
-      >
-        {conversation.otherDisplayName.charAt(0).toUpperCase()}
-      </span>
+      <Avatar
+        avatarPath={conversation.otherAvatarPath}
+        displayName={conversation.otherDisplayName}
+        size={40}
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <p className="truncate font-semibold text-[#1d2420]">

@@ -16,6 +16,7 @@ export type SearchPerson = {
   displayName: string;
   bio: string | null;
   viewerFollows: boolean;
+  avatarPath: string | null;
 };
 
 export type SearchPeoplePage = {
@@ -66,6 +67,7 @@ export async function searchPeople(
       displayName: row.display_name,
       bio: row.bio,
       viewerFollows: row.viewer_follows,
+      avatarPath: row.avatar_path,
     }));
     return {
       people,

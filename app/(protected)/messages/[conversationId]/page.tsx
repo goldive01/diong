@@ -6,6 +6,7 @@ import { markConversationRead } from "@/src/lib/messages/message-mutations";
 import { PAGE_SIZE } from "@/src/lib/messages/message-pagination";
 import { MessageThread } from "@/src/components/messages/message-thread";
 import { loadMoreMessages, sendMessageAction } from "@/app/(protected)/messages/actions";
+import { Avatar } from "@/src/components/media/avatar";
 
 export const metadata = {
   title: "Conversation",
@@ -47,12 +48,11 @@ export default async function ConversationPage({
           href={`/profile/${conversation.otherUsername}`}
           className="ml-auto flex items-center gap-2 rounded-full px-2 py-1 hover:bg-white"
         >
-          <span
-            aria-hidden="true"
-            className="flex size-8 items-center justify-center rounded-full bg-[#dfe6d2] text-sm font-semibold text-[#465331]"
-          >
-            {conversation.otherDisplayName.charAt(0).toUpperCase()}
-          </span>
+          <Avatar
+            avatarPath={conversation.otherAvatarPath}
+            displayName={conversation.otherDisplayName}
+            size={32}
+          />
           <span className="font-semibold text-[#1d2420]">
             {conversation.otherDisplayName}
           </span>

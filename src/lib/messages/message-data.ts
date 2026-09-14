@@ -22,6 +22,7 @@ export type ConversationSummary = {
   lastMessageBody: string | null;
   lastMessageAt: string | null;
   unread: boolean;
+  otherAvatarPath: string | null;
 };
 
 export type ConversationPage = {
@@ -38,6 +39,7 @@ function mapConversationSummary(row: ConversationSummaryRow): ConversationSummar
     lastMessageBody: row.last_message_body,
     lastMessageAt: row.last_message_at,
     unread: Boolean(row.unread),
+    otherAvatarPath: row.other_avatar_path,
   };
 }
 
@@ -85,6 +87,7 @@ export type ConversationDetail = {
   otherUsername: string;
   otherDisplayName: string;
   createdAt: string;
+  otherAvatarPath: string | null;
 };
 
 /**
@@ -113,6 +116,7 @@ export async function getConversation(
       otherUsername: row.other_username,
       otherDisplayName: row.other_display_name,
       createdAt: row.created_at,
+      otherAvatarPath: row.other_avatar_path,
     };
   } catch (cause) {
     console.error(

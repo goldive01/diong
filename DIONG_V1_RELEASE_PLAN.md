@@ -9,6 +9,14 @@ taken before Social Network Pass 1. It is now historical for the areas Pass
 Rows 9–11 below and blocker #3 have been updated to reflect Pass 6; the rest
 of this document is left as originally written.
 
+Pass 7 (profile / post / community media — see
+`docs/MEDIA_PROFILE_STORAGE.md`) has since shipped as application code: the
+`202609130002_media_profile_polish.sql` migration is written but **not yet
+applied to any Supabase project**, and this document predates it entirely —
+this is the only Pass 7 reference in this file; nothing below was written
+with media in mind and none of its row-level assessments (e.g. row 16's RLS
+summary, row 17's test count) reflect it.
+
 Estimated V1 completion: **~62%** (at time of writing; superseded by Pass 6 for
 Goals/Habits/Journal).
 

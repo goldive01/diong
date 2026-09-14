@@ -13,11 +13,19 @@ This document describes the Diong data model. Phase 3 tables are implemented by 
 ## profiles (implemented)
 
 - Purpose: Store the authenticated user's public profile and onboarding state.
-- Fields: `id`, `username`, `display_name`, `bio`, `avatar_url`, `onboarding_completed`, `created_at`, `updated_at`.
+- Fields: `id`, `username`, `display_name`, `bio`, `avatar_url`, `avatar_path`,
+  `cover_path`, `onboarding_completed`, `created_at`, `updated_at`.
 - Relationship: `id` is both the primary key and a cascading foreign key to `auth.users.id`.
 - Privacy: Authenticated users can read public profile rows. Owners alone can insert/repair and update their row. Email and auth metadata remain in Supabase Auth.
 - Validation: Completed profiles require a normalized 3–30 character username and display name. Usernames allow lowercase letters, numbers and underscores. Display names are 1–60 characters and bios at most 300.
 - Lifecycle: A secure auth trigger creates the minimum row. The migration idempotently repairs missing rows. Atomic onboarding is performed by `complete_onboarding` under the authenticated user's RLS context.
+- Media (Pass 7 — `avatar_path` / `cover_path`, added by
+  `supabase/migrations/202609130002_media_profile_polish.sql`, **not yet
+  applied**): relative Supabase Storage paths
+  (`profiles/{userId}/avatar|cover/{uuid}.{ext}`) in the public
+  `diong-public-media` bucket, never a full URL. `avatar_url` predates Pass 7,
+  was never wired to an upload path, and is left untouched. See
+  `docs/MEDIA_PROFILE_STORAGE.md`.
 
 ## interests (implemented)
 
@@ -218,6 +226,30 @@ This document describes the Diong data model. Phase 3 tables are implemented by 
 - Validation: primary key prevents duplicates; `bookmark_post` requires a
   visible, unblocked post and is idempotent. Writes are RPC-only.
 
+## post_media (implemented, not yet applied)
+
+- Implemented by `supabase/migrations/202609130002_media_profile_polish.sql`
+  (Pass 7). **Not yet applied to any Supabase project** — see
+  `docs/MEDIA_PROFILE_STORAGE.md`.
+- Purpose: Up to 4 images attached to one post.
+- Fields: `id`, `post_id`, `user_id`, `storage_path`, `mime_type`,
+  `size_bytes`, `width`, `height`, `position`, `alt_text`, `created_at`.
+- Relationship to users: `post_id → posts` (cascade), `user_id → auth.users`
+  (cascade); a `BEFORE INSERT OR UPDATE` trigger
+  (`enforce_post_media_ownership`) additionally guarantees `user_id` always
+  matches the owning post's author, independent of the RPC's own check.
+- Privacy: Readable when the parent post is visible to the viewer
+  (`public.viewer_can_see_post(post_id)`) — identical visibility rule as the
+  post's own text. **No client select grant beyond that policy**; writes are
+  RPC-only (`attach_post_media()` re-validates post ownership, MIME type,
+  size and the 4-image ceiling; `remove_post_media()` is owner-only and
+  returns the deleted row's `storage_path` for Storage cleanup).
+- Indexes: `(post_id, position)`; `(user_id, created_at desc)`.
+- Validation: `mime_type` CHECKed to `image/jpeg` / `image/png` /
+  `image/webp`; `size_bytes` 1–6291456 (6 MB); `position` non-negative;
+  `alt_text` ≤ 300 characters; `storage_path` non-blank and unique; unique
+  `(post_id, position)` — one row per display slot.
+
 ## follows (implemented)
 
 - Implemented by `supabase/migrations/202609100002_social_graph.sql` (Social
@@ -292,7 +324,7 @@ This document describes the Diong data model. Phase 3 tables are implemented by 
   Network Pass 5). See `docs/COMMUNITIES_MODERATION.md`.
 - Purpose: A public topic community.
 - Fields: `id`, `owner_id`, `slug`, `name`, `description`, `rules`,
-  `created_at`, `updated_at`, `is_active`.
+  `created_at`, `updated_at`, `is_active`, `avatar_path`, `cover_path`.
 - Relationship to users: `owner_id → auth.users` (cascade). Always
   `auth.uid()` at creation time — never client-supplied.
 - Privacy: Public in V1 — any authenticated member can read an active
@@ -302,6 +334,13 @@ This document describes the Diong data model. Phase 3 tables are implemented by 
 - Validation: name 2–80 characters; slug unique, lowercase letters/digits/
   single hyphens, 3–60 characters; description ≤ 2000 characters; rules
   ≤ 5000 characters.
+- Media (Pass 7 — `avatar_path` / `cover_path`, added by
+  `supabase/migrations/202609130002_media_profile_polish.sql`, **not yet
+  applied**): relative Storage paths
+  (`communities/{ownerUserId}/{communityId}/avatar|cover/{uuid}.{ext}`),
+  writable only by the community **owner** via `set_community_avatar()` /
+  `set_community_cover()` (`SECURITY DEFINER`, owner-only re-check) — a
+  moderator gains no branding authority. See `docs/MEDIA_PROFILE_STORAGE.md`.
 
 ## community_members (implemented)
 

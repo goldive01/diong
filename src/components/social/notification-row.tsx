@@ -8,6 +8,7 @@ import {
   notificationHref,
 } from "@/src/lib/social/notification-labels";
 import { markNotificationReadAction } from "@/app/(protected)/notifications/actions";
+import { Avatar } from "@/src/components/media/avatar";
 
 // One notification row. Unread is marked with visible text ("New"), never
 // colour alone. When the target is still available the whole row is a link
@@ -26,17 +27,26 @@ export function NotificationRow({
   const href = notificationHref(notification);
 
   const body = (
-    <>
-      <p className="text-sm leading-6 text-[#1d2420]">
-        {sentence}
-        {unread && (
-          <span className="ml-2 rounded-full bg-[#eef2e5] px-2 py-0.5 text-xs font-semibold text-[#465331]">
-            New
-          </span>
-        )}
-      </p>
-      <p className="mt-1 text-xs text-[#7a8378]">{timestamp}</p>
-    </>
+    <div className="flex items-start gap-3">
+      {notification.actorUserId && (
+        <Avatar
+          avatarPath={notification.actorAvatarPath}
+          displayName={notification.actorDisplayName ?? "?"}
+          size={36}
+        />
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm leading-6 text-[#1d2420]">
+          {sentence}
+          {unread && (
+            <span className="ml-2 rounded-full bg-[#eef2e5] px-2 py-0.5 text-xs font-semibold text-[#465331]">
+              New
+            </span>
+          )}
+        </p>
+        <p className="mt-1 text-xs text-[#7a8378]">{timestamp}</p>
+      </div>
+    </div>
   );
 
   if (href) {

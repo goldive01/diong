@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { requireCompletedProfile } from "@/src/lib/auth";
 import { getCommunity, listCommunityPosts } from "@/src/lib/communities/community-data";
@@ -14,6 +15,9 @@ import {
   leaveCommunityAction,
   loadMoreCommunityPosts,
 } from "@/app/(protected)/communities/[slug]/actions";
+import { Avatar } from "@/src/components/media/avatar";
+import { getPublicMediaUrl } from "@/src/lib/media/media-url";
+import { CommunityMediaSettings } from "@/src/components/communities/community-media-settings";
 
 export async function generateMetadata({
   params,
@@ -29,7 +33,7 @@ export default async function CommunityDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { supabase } = await requireCompletedProfile();
+  const { supabase, userId } = await requireCompletedProfile();
   const { slug } = await params;
 
   // get_community() returns no row for a missing or inactive community —
@@ -42,6 +46,7 @@ export default async function CommunityDetailPage({
   const isOwner = community.viewerRole === "owner";
   const isModerator = community.viewerRole === "moderator";
   const isMember = community.viewerRole !== null;
+  const coverUrl = getPublicMediaUrl(community.coverPath);
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 py-10 sm:px-6 sm:py-14">
@@ -52,21 +57,36 @@ export default async function CommunityDetailPage({
         ← Back to Communities
       </Link>
 
-      <section className="mt-4 rounded-3xl border border-[#ded7c9] bg-white p-6 sm:p-9">
+      <section className="mt-4 overflow-hidden rounded-3xl border border-[#ded7c9] bg-white">
+        <div className="relative aspect-[3/1] w-full bg-gradient-to-br from-[#eef2e5] to-[#f1ede3] sm:aspect-[4/1]">
+          {coverUrl && (
+            <Image src={coverUrl} alt="" fill sizes="640px" className="object-cover" />
+          )}
+        </div>
+
+        <div className="p-6 sm:p-9">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight">
-              {community.name}
-            </h1>
-            <p className="mt-1 text-sm text-[#657052]">
-              {memberCountLabel(community.memberCount)} · Owned by{" "}
-              <Link
-                href={`/profile/${community.ownerUsername}`}
-                className="font-semibold hover:underline"
-              >
-                {community.ownerDisplayName}
-              </Link>
-            </p>
+          <div className="flex min-w-0 items-start gap-3">
+            <Avatar
+              avatarPath={community.avatarPath}
+              displayName={community.name}
+              size={56}
+              className="-mt-10 border-4 border-white sm:-mt-12"
+            />
+            <div className="min-w-0">
+              <h1 className="text-3xl font-semibold tracking-tight">
+                {community.name}
+              </h1>
+              <p className="mt-1 text-sm text-[#657052]">
+                {memberCountLabel(community.memberCount)} · Owned by{" "}
+                <Link
+                  href={`/profile/${community.ownerUsername}`}
+                  className="font-semibold hover:underline"
+                >
+                  {community.ownerDisplayName}
+                </Link>
+              </p>
+            </div>
           </div>
 
           {isOwner ? (
@@ -119,6 +139,18 @@ export default async function CommunityDetailPage({
             </p>
           </details>
         )}
+
+        {isOwner && (
+          <CommunityMediaSettings
+            communityId={community.id}
+            slug={slug}
+            ownerUserId={community.ownerId}
+            avatarPath={community.avatarPath}
+            coverPath={community.coverPath}
+            communityName={community.name}
+          />
+        )}
+        </div>
       </section>
 
       {isMember && (
@@ -128,6 +160,7 @@ export default async function CommunityDetailPage({
         >
           <CommunityPostComposer
             action={createCommunityPostAction.bind(null, community.id, slug)}
+            userId={userId}
           />
         </section>
       )}

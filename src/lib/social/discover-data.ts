@@ -16,6 +16,7 @@ export type DiscoverPerson = {
   bio: string | null;
   sharedInterestCount: number;
   viewerFollows: boolean;
+  avatarPath: string | null;
 };
 
 export type DiscoverPeoplePage = {
@@ -62,6 +63,7 @@ export async function discoverPeople(
       bio: row.bio,
       sharedInterestCount: row.shared_interest_count,
       viewerFollows: row.viewer_follows,
+      avatarPath: row.avatar_path,
     }));
     return {
       people,

@@ -18,6 +18,7 @@ import {
   postTypeLabel,
 } from "@/src/lib/social/post-labels";
 import type { FeedPost } from "@/src/lib/social/post-data";
+import { PostMediaEditor } from "@/src/components/media/post-media-editor";
 
 // Edit body + visibility of an existing post. Post type and creation time are
 // fixed and shown for context only.
@@ -108,6 +109,8 @@ export function PostEditForm({ post }: { post: FeedPost }) {
           ))}
         </select>
       </div>
+
+      <PostMediaEditor postId={post.id} initialMedia={post.media} />
 
       {state.status === "error" && state.message && (
         <p

@@ -137,3 +137,50 @@ export const bookmarkPost = (s: SupabaseClient<Database>, id: number) =>
   callEngagement(s, "bookmark_post", id);
 export const removeBookmark = (s: SupabaseClient<Database>, id: number) =>
   callEngagement(s, "remove_bookmark", id);
+
+// Pass 7 — post images. post_media is RPC-only, same reasoning as posts /
+// post_comments above: attach_post_media() re-validates ownership, mime
+// type, size and the 4-image ceiling; remove_post_media() re-validates
+// ownership and returns the storage_path so the caller can delete the
+// Storage object once the DB row is gone.
+export async function attachPostMedia(
+  supabase: SupabaseClient<Database>,
+  input: {
+    postId: number;
+    storagePath: string;
+    mimeType: string;
+    sizeBytes: number;
+    width?: number | null;
+    height?: number | null;
+    altText?: string | null;
+  },
+): Promise<MutationResult<number>> {
+  const { data, error } = await supabase.rpc("attach_post_media", {
+    p_post_id: input.postId,
+    p_storage_path: input.storagePath,
+    p_mime_type: input.mimeType,
+    p_size_bytes: input.sizeBytes,
+    p_width: input.width ?? null,
+    p_height: input.height ?? null,
+    p_alt_text: input.altText ?? null,
+  });
+  if (!error) return { status: "success", data: data as number };
+  if (classify(error.code) === "unknown") {
+    console.error("attach_post_media failed:", error.message);
+  }
+  return { status: "error", reason: classify(error.code) };
+}
+
+export async function removePostMedia(
+  supabase: SupabaseClient<Database>,
+  mediaId: number,
+): Promise<MutationResult<string>> {
+  const { data, error } = await supabase.rpc("remove_post_media", {
+    p_media_id: mediaId,
+  });
+  if (!error) return { status: "success", data: data as string };
+  if (classify(error.code) === "unknown") {
+    console.error("remove_post_media failed:", error.message);
+  }
+  return { status: "error", reason: classify(error.code) };
+}

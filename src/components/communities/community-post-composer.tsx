@@ -9,6 +9,10 @@ import {
 import { POST_BODY_MAX, normalizePostBody } from "@/src/lib/social/post-validation";
 import { POST_TYPES } from "@/src/lib/social/post-vocab";
 import { POST_TYPE_HINT, POST_TYPE_LABEL } from "@/src/lib/social/post-labels";
+import {
+  PostImagePicker,
+  type PostImagePickerHandle,
+} from "@/src/components/media/post-image-picker";
 
 type CreateCommunityPostAction = (
   state: CommunityPostFormState,
@@ -18,18 +22,24 @@ type CreateCommunityPostAction = (
 // The community post composer. Always public visibility — no visibility
 // field — since V1 community posts are always public social posts (see
 // docs/COMMUNITIES_MODERATION.md). Otherwise mirrors PostComposer: controlled
-// state, body preserved on error, pending state, live length indicator.
+// state, body preserved on error, pending state, live length indicator, and
+// (Pass 7) the same two-phase image attach once the post exists.
 export function CommunityPostComposer({
   action,
+  userId,
 }: {
   action: CreateCommunityPostAction;
+  userId: string;
 }) {
   const [state, formAction, pending] = useActionState(
     action,
     initialCommunityPostFormState(),
   );
   const [values, setValues] = useState(EMPTY_COMMUNITY_POST_FORM);
+  const [imageWarning, setImageWarning] = useState("");
+  const [attaching, setAttaching] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const pickerRef = useRef<PostImagePickerHandle>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect -- clears the composer only
      on a new successful submit result, never during an unrelated re-render;
@@ -37,6 +47,21 @@ export function CommunityPostComposer({
   useEffect(() => {
     if (state.status === "success") {
       setValues((current) => ({ ...current, body: "" }));
+
+      const postId = state.createdPostId;
+      if (postId && pickerRef.current?.hasImages) {
+        setAttaching(true);
+        pickerRef.current.attachAll(postId).then(({ failed }) => {
+          setAttaching(false);
+          setImageWarning(
+            failed > 0
+              ? `${failed} image${failed === 1 ? "" : "s"} could not be added, but your post was shared.`
+              : "",
+          );
+        });
+      } else {
+        setImageWarning("");
+      }
     }
   }, [state]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -106,6 +131,19 @@ export function CommunityPostComposer({
         </p>
       </div>
 
+      <PostImagePicker
+        ref={pickerRef}
+        userId={userId}
+        disabled={pending || attaching}
+        fieldId="community-post-images"
+      />
+
+      {imageWarning && (
+        <p role="alert" className="rounded-xl bg-[#fff8e6] px-4 py-3 text-sm text-[#6b5a1f]">
+          {imageWarning}
+        </p>
+      )}
+
       {state.status === "success" && (
         <p
           role="status"
@@ -117,10 +155,10 @@ export function CommunityPostComposer({
 
       <button
         type="submit"
-        disabled={pending || over || bodyLength === 0}
+        disabled={pending || attaching || over || bodyLength === 0}
         className="min-h-12 rounded-full bg-[#263b2d] px-6 font-semibold text-white transition hover:bg-[#1d3024] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {pending ? "Sharing…" : "Share"}
+        {pending ? "Sharing…" : attaching ? "Adding images…" : "Share"}
       </button>
     </form>
   );

@@ -11,7 +11,7 @@ export const metadata = {
 };
 
 export default async function FeedPage() {
-  const { supabase } = await requireCompletedProfile();
+  const { supabase, userId } = await requireCompletedProfile();
   const page = await listFeedPosts(supabase, { limit: FEED_PAGE_SIZE });
 
   return (
@@ -39,7 +39,7 @@ export default async function FeedPage() {
         aria-label="Share something"
         className="rounded-3xl border border-[#ded7c9] bg-white p-5 sm:p-6"
       >
-        <PostComposer />
+        <PostComposer userId={userId} />
       </section>
 
       <section aria-label="Your feed" className="mt-8">

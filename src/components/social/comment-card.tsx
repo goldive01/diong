@@ -12,6 +12,7 @@ import {
   editCommentAction,
   submitComment,
 } from "@/app/(protected)/posts/actions";
+import { Avatar } from "@/src/components/media/avatar";
 
 function CommentBody({ comment }: { comment: PostCommentView }) {
   if (comment.isDeleted || comment.body === null) {
@@ -54,6 +55,14 @@ function SingleComment({
   return (
     <div>
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+        <Link
+          href={`/profile/${comment.authorUsername}`}
+          className="shrink-0 self-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          <Avatar avatarPath={comment.authorAvatarPath} displayName={comment.authorDisplayName} size={28} />
+        </Link>
         <Link
           href={`/profile/${comment.authorUsername}`}
           className="font-semibold text-[#1d2420] hover:underline"

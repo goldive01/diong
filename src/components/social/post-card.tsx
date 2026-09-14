@@ -11,6 +11,8 @@ import { PostEngagementBar } from "@/src/components/social/post-engagement-bar";
 import { PostOwnerActions } from "@/src/components/social/post-owner-actions";
 import { ReportButton } from "@/src/components/social/report-button";
 import { createReportAction } from "@/app/(protected)/reports/actions";
+import { Avatar } from "@/src/components/media/avatar";
+import { PostMediaGrid } from "@/src/components/media/post-media-grid";
 
 const PREVIEW_CHARS = 600;
 
@@ -37,6 +39,14 @@ export function PostCard({
   return (
     <article className="rounded-3xl border border-[#ded7c9] bg-white p-5 sm:p-6">
       <header className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <Link
+          href={`/profile/${post.authorUsername}`}
+          className="shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          <Avatar avatarPath={post.authorAvatarPath} displayName={post.authorDisplayName} size={36} />
+        </Link>
         <Link
           href={`/profile/${post.authorUsername}`}
           className="font-semibold text-[#1d2420] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
@@ -99,6 +109,8 @@ export function PostCard({
           Open post
         </Link>
       )}
+
+      <PostMediaGrid media={post.media} />
 
       <PostEngagementBar post={post} showCommentLink={!detailed} />
 
