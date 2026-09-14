@@ -226,6 +226,7 @@ ship now (see V1 capabilities).
 - `docs/COMMUNITIES_MODERATION.md` — communities / membership / moderation / reports schema, RPCs, RLS, verification
 - `docs/GOALS_HABITS_JOURNAL.md` — goals / milestones / habits / streaks / private journal schema, RLS, verification
 - `docs/MEDIA_PROFILE_STORAGE.md` — profile/post/community media schema, Storage bucket, RLS, privacy model, verification
+- `docs/PWA_PERFORMANCE.md` — PWA manifest/icons/service-worker foundation, image sizing, privacy limitations
 - `docs/DAILY_PRIME_HISTORY.md` — Prime reflections / history / progress
 - `docs/DEPLOYMENT.md` — deployment
 - `docs/RELEASE_CHECKLIST.md` — launch checklist

@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ServiceWorkerRegistration } from "@/src/components/pwa/service-worker-registration";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,6 +20,10 @@ export const metadata: Metadata = {
   applicationName: "Diong",
 };
 
+export const viewport: Viewport = {
+  themeColor: "#1d2420",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,6 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
@@ -37,6 +43,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         {children}
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

@@ -140,7 +140,13 @@ export function ImageUploadField({
           className={`relative overflow-hidden bg-[#eee9dd] ${previewShapeClass}`}
         >
           {displayUrl ? (
-            <Image src={displayUrl} alt="" fill className="object-cover" />
+            <Image
+              src={displayUrl}
+              alt=""
+              fill
+              sizes={shape === "circle" ? "80px" : "(max-width: 640px) 100vw, 640px"}
+              className="object-cover"
+            />
           ) : shape === "circle" ? (
             <span className="flex size-full items-center justify-center text-2xl font-semibold text-[#465331]">
               {getInitials(fallbackLabel)}

@@ -187,6 +187,7 @@ export const PostImagePicker = forwardRef<
                   alt=""
                   fill
                   unoptimized
+                  sizes="(max-width: 640px) 50vw, 25vw"
                   className="object-cover"
                 />
                 <button

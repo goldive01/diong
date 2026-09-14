@@ -49,7 +49,13 @@ export function PostMediaEditor({
           if (!url) return null;
           return (
             <li key={item.id} className="relative aspect-square overflow-hidden rounded-xl bg-[#eee9dd]">
-              <Image src={url} alt={item.alt_text ?? ""} fill className="object-cover" />
+              <Image
+                src={url}
+                alt={item.alt_text ?? ""}
+                fill
+                sizes="(max-width: 640px) 50vw, 25vw"
+                className="object-cover"
+              />
               <button
                 type="button"
                 onClick={() => onRemove(item.id)}
