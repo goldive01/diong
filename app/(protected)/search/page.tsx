@@ -54,6 +54,13 @@ export default async function SearchPage({
 
       <SearchForm defaultValue={query} />
 
+      {query.length === 0 && (
+        <p className="mt-4 text-sm text-[#5f6962]">
+          Search for people by name or username, or posts and communities by
+          their text.
+        </p>
+      )}
+
       {query.length > 0 && !valid && (
         <p role="status" className="mt-4 text-sm text-[#5f6962]">
           Type at least 2 characters to search.
@@ -71,7 +78,7 @@ export default async function SearchPage({
               basePath="/search"
               pageParam="peoplePage"
               extraParams={{ q: query }}
-              emptyText="No people found."
+              emptyText="No people found. Try a different name or username."
             />
           </section>
 
@@ -83,7 +90,7 @@ export default async function SearchPage({
               initialPosts={results[1].posts}
               initialCursor={results[1].nextCursor}
               loadMore={loadMoreSearchPosts.bind(null, query)}
-              emptyText="No posts found."
+              emptyText="No posts found. Try different words."
             />
           </section>
 
@@ -99,7 +106,7 @@ export default async function SearchPage({
               basePath="/search"
               pageParam="communitiesPage"
               extraParams={{ q: query }}
-              emptyText="No communities found."
+              emptyText="No communities found. Try a different name."
             />
           </section>
         </div>

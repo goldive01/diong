@@ -13,6 +13,7 @@ import {
   submitComment,
 } from "@/app/(protected)/posts/actions";
 import { Avatar } from "@/src/components/media/avatar";
+import { useConfirmFocus } from "@/src/lib/a11y/use-confirm-focus";
 
 function CommentBody({ comment }: { comment: PostCommentView }) {
   if (comment.isDeleted || comment.body === null) {
@@ -39,8 +40,10 @@ function SingleComment({
   canReply: boolean;
 }) {
   const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
+  const cancelRef = useConfirmFocus<HTMLButtonElement>(confirming);
 
   const deleted = comment.isDeleted || comment.body === null;
 
@@ -48,7 +51,10 @@ function SingleComment({
     setError("");
     startTransition(async () => {
       const result = await deleteCommentAction(postId, comment.id);
-      if (result.status === "error") setError(result.message);
+      if (result.status === "error") {
+        setError(result.message);
+        setConfirming(false);
+      }
     });
   }
 
@@ -103,29 +109,50 @@ function SingleComment({
             <button
               type="button"
               onClick={onReplyClick}
-              className="min-h-9 rounded-full px-2.5 py-1 text-[#57615a] transition hover:bg-[#f2efe7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+              className="min-h-11 rounded-full px-2.5 py-1 text-[#57615a] transition hover:bg-[#f2efe7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
             >
               Reply
             </button>
           )}
-          {comment.isAuthor && !deleted && (
+          {comment.isAuthor && !deleted && !confirming && (
             <>
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="min-h-9 rounded-full px-2.5 py-1 text-[#57615a] transition hover:bg-[#f2efe7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+                className="min-h-11 rounded-full px-2.5 py-1 text-[#57615a] transition hover:bg-[#f2efe7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
               >
                 Edit
               </button>
               <button
                 type="button"
+                onClick={() => setConfirming(true)}
+                className="min-h-11 rounded-full px-2.5 py-1 text-[#6b746d] transition hover:text-[#9b3f37] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+              >
+                Delete
+              </button>
+            </>
+          )}
+          {comment.isAuthor && !deleted && confirming && (
+            <span className="flex flex-wrap items-center gap-2 text-[#5f6962]">
+              Delete this comment?
+              <button
+                type="button"
                 onClick={onDelete}
                 disabled={pending}
-                className="min-h-9 rounded-full px-2.5 py-1 text-[#6b746d] transition hover:text-[#9b3f37] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+                className="min-h-11 rounded-full px-2.5 py-1 font-semibold text-[#9b3f37] transition hover:bg-[#fff0ed] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
               >
                 {pending ? "Removing…" : "Delete"}
               </button>
-            </>
+              <button
+                ref={cancelRef}
+                type="button"
+                onClick={() => setConfirming(false)}
+                disabled={pending}
+                className="min-h-11 rounded-full px-2.5 py-1 font-semibold text-[#4d574f] transition hover:bg-[#f2efe7] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+              >
+                Cancel
+              </button>
+            </span>
           )}
         </div>
       )}

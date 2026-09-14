@@ -5,6 +5,7 @@ import {
   initialBlockState,
   type BlockActionState,
 } from "@/src/lib/social/social-form-state";
+import { useConfirmFocus } from "@/src/lib/a11y/use-confirm-focus";
 
 type BlockAction = (
   state: BlockActionState,
@@ -33,6 +34,7 @@ export function BlockButton({
     initialBlockState(blocked),
   );
   const [confirming, setConfirming] = useState(false);
+  const cancelRef = useConfirmFocus<HTMLButtonElement>(confirming);
 
   if (state.blocked) {
     return (
@@ -86,6 +88,7 @@ export function BlockButton({
           </button>
         </form>
         <button
+          ref={cancelRef}
           type="button"
           onClick={() => setConfirming(false)}
           className="min-h-10 rounded-full border border-[#cfc8bb] px-4 text-sm font-semibold text-[#3e4a41] hover:bg-[#f7f4ee]"

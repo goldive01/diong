@@ -7,6 +7,7 @@ import {
   type DeletePostState,
 } from "@/src/lib/social/post-form-state";
 import { deletePostAction } from "@/app/(protected)/posts/actions";
+import { useConfirmFocus } from "@/src/lib/a11y/use-confirm-focus";
 
 // Edit link + delete-with-confirm for the author's own post. Delete is a soft
 // delete on the server; on success the action redirects to /feed.
@@ -17,6 +18,7 @@ export function PostOwnerActions({ postId }: { postId: number }) {
     INITIAL_DELETE_POST_STATE,
   );
   const [confirming, setConfirming] = useState(false);
+  const cancelRef = useConfirmFocus<HTMLButtonElement>(confirming);
 
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
@@ -40,6 +42,7 @@ export function PostOwnerActions({ postId }: { postId: number }) {
             </button>
           </form>
           <button
+            ref={cancelRef}
             type="button"
             onClick={() => setConfirming(false)}
             className="min-h-11 rounded-full border border-[#cfc8bb] px-4 font-semibold text-[#3e4a41] hover:bg-white"

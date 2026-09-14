@@ -5,6 +5,7 @@ import {
   INITIAL_MODERATION_ACTION_STATE,
   type ModerationActionState,
 } from "@/src/lib/communities/community-form-state";
+import { useConfirmFocus } from "@/src/lib/a11y/use-confirm-focus";
 
 type ModerationAction = (
   state: ModerationActionState,
@@ -37,6 +38,7 @@ export function ModerationActionButton({
     INITIAL_MODERATION_ACTION_STATE,
   );
   const [confirming, setConfirming] = useState(false);
+  const cancelRef = useConfirmFocus<HTMLButtonElement>(confirming);
 
   const buttonClass = destructive
     ? "min-h-9 rounded-full px-3 text-xs font-semibold text-[#8c3527] transition hover:bg-[#fff0ed] disabled:cursor-wait disabled:opacity-60"
@@ -70,6 +72,7 @@ export function ModerationActionButton({
         </button>
         {confirmText && (
           <button
+            ref={cancelRef}
             type="button"
             onClick={() => setConfirming(false)}
             className="min-h-9 rounded-full px-2 text-xs font-semibold text-[#4d574f] hover:underline"

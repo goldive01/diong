@@ -58,10 +58,10 @@ export default async function ProfilePage({
               className="border-4 border-white"
             />
           </div>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight">
+          <h1 className="mt-4 break-words text-4xl font-semibold tracking-tight">
             {social.display_name}
           </h1>
-          <p className="mt-2 font-medium text-[#657052]">@{social.username}</p>
+          <p className="mt-2 break-words font-medium text-[#657052]">@{social.username}</p>
 
           {!social.viewer_blocked && social.bio && (
             <p className="mt-6 whitespace-pre-wrap leading-7 text-[#4f5952]">

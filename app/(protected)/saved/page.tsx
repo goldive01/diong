@@ -33,7 +33,7 @@ export default async function SavedPage() {
         initialPosts={page.posts}
         initialCursor={page.nextCursor}
         loadMore={loadMoreBookmarks}
-        emptyText="No saved posts yet."
+        emptyText="No saved posts yet. Use the Save button on any post to keep it here."
       />
     </main>
   );

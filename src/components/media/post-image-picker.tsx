@@ -194,7 +194,7 @@ export const PostImagePicker = forwardRef<
                   type="button"
                   onClick={() => removeImage(image.id)}
                   aria-label="Remove this image"
-                  className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  className="absolute right-1 top-1 flex size-8 items-center justify-center rounded-full bg-black/60 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
                   ×
                 </button>

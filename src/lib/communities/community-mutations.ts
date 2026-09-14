@@ -54,12 +54,15 @@ async function callCommunityIdMutation(
     console.error(`${fn} failed:`, error.message);
   }
   // leave_community's owner-guard message is safe to surface directly (it
-  // never leaks anything beyond "you are the owner"); every other error
-  // collapses to the caller's generic mapping.
+  // never leaks anything beyond "you are the owner") — but only for the
+  // errcode (42501) that RPC is documented to raise that message under.
+  // Gating on fn alone would also forward an unrelated/unexpected error's
+  // raw driver text whenever it happened to come from this same RPC call.
+  const reason = classify(error.code);
   return {
     status: "error",
-    reason: classify(error.code),
-    message: fn === "leave_community" ? error.message : undefined,
+    reason,
+    message: fn === "leave_community" && reason === "not_available" ? error.message : undefined,
   };
 }
 

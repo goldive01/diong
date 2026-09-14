@@ -5,6 +5,7 @@ import {
   INITIAL_DELETE_JOURNAL_ENTRY_STATE,
   type DeleteJournalEntryState,
 } from "@/src/lib/journal/journal-form-state";
+import { useConfirmFocus } from "@/src/lib/a11y/use-confirm-focus";
 
 type DeleteAction = (
   state: DeleteJournalEntryState,
@@ -20,6 +21,7 @@ export function JournalDeleteButton({ action }: { action: DeleteAction }) {
     INITIAL_DELETE_JOURNAL_ENTRY_STATE,
   );
   const [confirming, setConfirming] = useState(false);
+  const cancelRef = useConfirmFocus<HTMLButtonElement>(confirming);
 
   if (!confirming) {
     return (
@@ -47,6 +49,7 @@ export function JournalDeleteButton({ action }: { action: DeleteAction }) {
           {pending ? "Deleting…" : "Confirm delete"}
         </button>
         <button
+          ref={cancelRef}
           type="button"
           onClick={() => setConfirming(false)}
           className="min-h-10 rounded-full px-3 text-sm font-semibold text-[#4d574f] hover:underline"

@@ -62,7 +62,7 @@ export default async function CommunitiesPage({
           basePath="/communities"
           pageParam="joinedPage"
           extraParams={{ discoverPage: String(discoverPage) }}
-          emptyText="You have not joined a community yet."
+          emptyText="You have not joined a community yet. Browse communities to discover below, or start your own."
         />
       </section>
 

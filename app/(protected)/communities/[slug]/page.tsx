@@ -74,10 +74,10 @@ export default async function CommunityDetailPage({
               className="-mt-10 border-4 border-white sm:-mt-12"
             />
             <div className="min-w-0">
-              <h1 className="text-3xl font-semibold tracking-tight">
+              <h1 className="break-words text-3xl font-semibold tracking-tight">
                 {community.name}
               </h1>
-              <p className="mt-1 text-sm text-[#657052]">
+              <p className="mt-1 break-words text-sm text-[#657052]">
                 {memberCountLabel(community.memberCount)} · Owned by{" "}
                 <Link
                   href={`/profile/${community.ownerUsername}`}

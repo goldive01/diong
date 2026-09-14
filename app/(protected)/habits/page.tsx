@@ -40,9 +40,12 @@ export default async function HabitsPage() {
       </header>
 
       {habits.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-[#d8d1c4] px-4 py-10 text-center text-sm text-[#68716b]">
-          No habits yet. Start with one repeatable action.
-        </p>
+        <div className="rounded-2xl border border-dashed border-[#d8d1c4] px-4 py-10 text-center text-sm text-[#68716b]">
+          <p>No habits yet. Start with one repeatable action.</p>
+          <Link href="/habits/new" className="mt-3 inline-block font-semibold text-[#59654a] hover:underline">
+            Create your first habit
+          </Link>
+        </div>
       ) : (
         <div className="space-y-10">
           <section aria-labelledby="today-habits-heading">

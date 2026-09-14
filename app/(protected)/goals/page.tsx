@@ -42,9 +42,12 @@ export default async function GoalsPage() {
       </header>
 
       {goals.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-[#d8d1c4] px-4 py-10 text-center text-sm text-[#68716b]">
-          No goals yet. Create a direction you want to work toward.
-        </p>
+        <div className="rounded-2xl border border-dashed border-[#d8d1c4] px-4 py-10 text-center text-sm text-[#68716b]">
+          <p>No goals yet. Create a direction you want to work toward.</p>
+          <Link href="/goals/new" className="mt-3 inline-block font-semibold text-[#59654a] hover:underline">
+            Create your first goal
+          </Link>
+        </div>
       ) : (
         <div className="space-y-10">
           <section aria-labelledby="active-goals-heading">

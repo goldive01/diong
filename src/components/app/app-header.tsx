@@ -1,6 +1,23 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { logout } from "@/app/(auth)/actions";
 import { SearchForm } from "@/src/components/social/search-form";
+import { isNavLinkActive } from "@/src/lib/app/nav-active";
+
+const NAV_LINK_CLASS =
+  "rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white aria-[current=page]:bg-white aria-[current=page]:text-[#1d2420]";
+
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const pathname = usePathname();
+  const current = isNavLinkActive(pathname, href);
+  return (
+    <Link href={href} aria-current={current ? "page" : undefined} className={NAV_LINK_CLASS}>
+      {children}
+    </Link>
+  );
+}
 
 export function AppHeader({
   unreadCount = 0,
@@ -17,7 +34,7 @@ export function AppHeader({
           <SearchForm compact />
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-4">
-          <Link href="/daily-prime" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Daily Prime</Link>
+          <NavLink href="/daily-prime">Daily Prime</NavLink>
           <details className="group relative">
             <summary className="flex min-h-10 cursor-pointer list-none items-center rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white [&::-webkit-details-marker]:hidden">
               Growth
@@ -28,14 +45,11 @@ export function AppHeader({
               <Link href="/journal" className="block rounded-xl px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-[#f7f4ee]">Journal</Link>
             </div>
           </details>
-          <Link href="/feed" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Feed</Link>
-          <Link href="/discover" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Discover</Link>
-          <Link href="/communities" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Communities</Link>
-          <Link href="/connections" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Connections</Link>
-          <Link
-            href="/messages"
-            className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white"
-          >
+          <NavLink href="/feed">Feed</NavLink>
+          <NavLink href="/discover">Discover</NavLink>
+          <NavLink href="/communities">Communities</NavLink>
+          <NavLink href="/connections">Connections</NavLink>
+          <NavLink href="/messages">
             Messages
             {unreadMessageCount > 0 && (
               <span
@@ -45,11 +59,8 @@ export function AppHeader({
                 {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
               </span>
             )}
-          </Link>
-          <Link
-            href="/notifications"
-            className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white"
-          >
+          </NavLink>
+          <NavLink href="/notifications">
             Notifications
             {unreadCount > 0 && (
               <span
@@ -59,8 +70,8 @@ export function AppHeader({
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
-          </Link>
-          <Link href="/settings/profile" className="rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white">Profile settings</Link>
+          </NavLink>
+          <NavLink href="/settings/profile">Profile settings</NavLink>
           <form action={logout}>
             <button className="min-h-10 rounded-full border border-[#cfc8bb] px-4 text-sm font-semibold hover:bg-white">Log out</button>
           </form>

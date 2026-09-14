@@ -45,7 +45,7 @@ export function ReportButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="min-h-9 rounded-full px-2.5 py-1 text-xs font-semibold text-[#8b9384] transition hover:text-[#6b746d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+        className="min-h-11 rounded-full px-2.5 py-1 text-xs font-semibold text-[#8b9384] transition hover:text-[#6b746d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
       >
         {label}
       </button>
@@ -67,6 +67,7 @@ export function ReportButton({
           required
           defaultValue=""
           aria-invalid={Boolean(state.errors.reason)}
+          aria-describedby={state.errors.reason ? `${reasonId}-error` : undefined}
           className="mt-1 min-h-9 w-full rounded-lg border border-[#cfc8bb] bg-white px-2 text-sm outline-none focus:border-[#6f7b4f] focus:ring-2 focus:ring-[#6f7b4f]/20"
         >
           <option value="" disabled>
@@ -79,7 +80,9 @@ export function ReportButton({
           ))}
         </select>
         {state.errors.reason && (
-          <p className="mt-1 text-xs text-[#9b3829]">{state.errors.reason}</p>
+          <p id={`${reasonId}-error`} role="alert" className="mt-1 text-xs text-[#9b3829]">
+            {state.errors.reason}
+          </p>
         )}
       </div>
 
@@ -92,10 +95,13 @@ export function ReportButton({
           name="details"
           rows={2}
           aria-invalid={Boolean(state.errors.details)}
+          aria-describedby={state.errors.details ? `${detailsId}-error` : undefined}
           className="mt-1 w-full rounded-lg border border-[#cfc8bb] px-2 py-1.5 text-sm outline-none focus:border-[#6f7b4f] focus:ring-2 focus:ring-[#6f7b4f]/20"
         />
         {state.errors.details && (
-          <p className="mt-1 text-xs text-[#9b3829]">{state.errors.details}</p>
+          <p id={`${detailsId}-error`} role="alert" className="mt-1 text-xs text-[#9b3829]">
+            {state.errors.details}
+          </p>
         )}
       </div>
 

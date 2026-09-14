@@ -61,7 +61,7 @@ export function PostMediaEditor({
                 onClick={() => onRemove(item.id)}
                 disabled={pendingId === item.id}
                 aria-label="Remove this image"
-                className="absolute right-1 top-1 flex size-6 items-center justify-center rounded-full bg-black/60 text-sm text-white outline-none disabled:cursor-wait disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-white"
+                className="absolute right-1 top-1 flex size-8 items-center justify-center rounded-full bg-black/60 text-sm text-white outline-none disabled:cursor-wait disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-white"
               >
                 ×
               </button>

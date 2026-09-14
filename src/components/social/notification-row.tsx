@@ -79,7 +79,7 @@ export function NotificationRow({
         >
           <button
             type="submit"
-            className="min-h-8 rounded-full border border-[#cfc8bb] px-3 text-xs font-semibold text-[#3e4a41] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
+            className="min-h-11 rounded-full border border-[#cfc8bb] px-3 text-xs font-semibold text-[#3e4a41] transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f7b4f]/40"
           >
             Mark as read
           </button>
