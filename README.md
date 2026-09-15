@@ -86,9 +86,8 @@ and makes no guaranteed-outcome claims.
 - **Media** — profile avatar and cover, up to 4 images per post, and
   community avatar/cover (owner-only). Browser-to-Storage uploads, relative
   paths only, a public `diong-public-media` Storage bucket for intentionally
-  public/social images only. (Pass 7 — `docs/MEDIA_PROFILE_STORAGE.md`; code
-  complete, requires applying migration 14 above, **not yet applied to any
-  Supabase project**.)
+  public/social images only. (Pass 7 — `docs/MEDIA_PROFILE_STORAGE.md`;
+  migration 14 applied.)
 - Privacy Notice and Terms of Use.
 - Branded 404, error boundaries and route-transition loading states.
 
@@ -131,9 +130,10 @@ Both are public by design. Diong never uses the service-role key.
 
 ## Supabase / database
 
-Apply the migrations in `supabase/migrations/` **in filename order** against the
-target project — with the Supabase CLI (`supabase db push`) or by pasting each
-file into the SQL Editor once, in order:
+All 15 migrations below are applied, in order, to the current Supabase
+project. Apply migrations in `supabase/migrations/` **in filename order**
+against any other target project — with the Supabase CLI (`supabase db push`)
+or by pasting each file into the SQL Editor once, in order:
 
 1. `202607190001_onboarding_and_profiles.sql`
 2. `202607270001_prime_protocol_engine.sql`
@@ -148,10 +148,8 @@ file into the SQL Editor once, in order:
 11. `202609120002_direct_messages.sql`
 12. `202609120003_communities.sql`
 13. `202609130001_goals_habits_journal.sql`
-14. `202609130002_media_profile_polish.sql` — **written, not yet applied to
-    any Supabase project.** See `docs/MEDIA_PROFILE_STORAGE.md`.
-15. `202609140001_search_and_profile_read_performance.sql` — **written, not
-    yet applied to any Supabase project.** See `docs/DATABASE_PERFORMANCE.md`.
+14. `202609130002_media_profile_polish.sql` — see `docs/MEDIA_PROFILE_STORAGE.md`.
+15. `202609140001_search_and_profile_read_performance.sql` — see `docs/DATABASE_PERFORMANCE.md`.
 
 Each file is a single transaction and is **not** idempotent — never re-run a
 migration that already succeeded. Migrations 2–15 depend on earlier ones. Row
@@ -212,8 +210,8 @@ available. The follow / block **social graph**, the
 **posts / feed / comments / likes / bookmarks** layer,
 **notifications, Discover & Search**, **direct messages**, **communities**,
 the private **Goals / Habits / Journal** layer, and **media** (profile
-avatar/cover, post images, community branding — pending migration 14) all
-ship now (see V1 capabilities).
+avatar/cover, post images, community branding) all ship now (see V1
+capabilities).
 
 ## Documentation
 
@@ -231,7 +229,8 @@ ship now (see V1 capabilities).
 - `docs/PWA_PERFORMANCE.md` — PWA manifest/icons/service-worker foundation, image sizing, privacy limitations
 - `docs/UX_RELIABILITY_ACCESSIBILITY.md` — loading/error/404 architecture, pending states, accessibility, mobile UX, empty states, safe-error policy
 - `docs/DATABASE_PERFORMANCE.md` — read-path query-flow audit, N+1 findings, indexes, pagination bounds, migration
+- `docs/PRODUCTION_DEPLOYMENT.md` — current, authoritative deployment guide: env vars, Vercel/Supabase setup, security headers, PWA, smoke test, rollback
 - `docs/DAILY_PRIME_HISTORY.md` — Prime reflections / history / progress
-- `docs/DEPLOYMENT.md` — deployment
+- `docs/DEPLOYMENT.md` — superseded by `docs/PRODUCTION_DEPLOYMENT.md`; kept for history
 - `docs/RELEASE_CHECKLIST.md` — launch checklist
 - `DIONG_V1_RELEASE_PLAN.md` — V1 completion plan

@@ -78,7 +78,7 @@ export function MessageThread({
               type="button"
               onClick={onLoadOlder}
               disabled={pending}
-              className="min-h-9 rounded-full border border-[#cfc8bb] px-4 text-xs font-semibold text-[#3e4a41] transition hover:bg-white disabled:cursor-wait disabled:opacity-60"
+              className="min-h-11 rounded-full border border-[#cfc8bb] px-4 text-xs font-semibold text-[#3e4a41] transition hover:bg-white disabled:cursor-wait disabled:opacity-60"
             >
               {pending ? "Loading…" : "Load earlier messages"}
             </button>

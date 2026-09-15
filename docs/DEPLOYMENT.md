@@ -1,5 +1,11 @@
 # Diong Deployment
 
+> **Superseded.** This document was written when Diong shipped only Daily
+> Prime and Connections (6 migrations). It is kept for history but is
+> incomplete for the current app — see **`docs/PRODUCTION_DEPLOYMENT.md`**
+> for the current, authoritative deployment guide (all 15 migrations,
+> current env vars, security headers, PWA, full smoke test).
+
 Target platform: **Next.js on Vercel + Supabase**. This document is the
 human-run procedure. Nothing here is automated by the app.
 

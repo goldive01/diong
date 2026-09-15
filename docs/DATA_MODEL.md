@@ -226,11 +226,10 @@ This document describes the Diong data model. Phase 3 tables are implemented by 
 - Validation: primary key prevents duplicates; `bookmark_post` requires a
   visible, unblocked post and is idempotent. Writes are RPC-only.
 
-## post_media (implemented, not yet applied)
+## post_media
 
 - Implemented by `supabase/migrations/202609130002_media_profile_polish.sql`
-  (Pass 7). **Not yet applied to any Supabase project** — see
-  `docs/MEDIA_PROFILE_STORAGE.md`.
+  (Pass 7). Applied — see `docs/MEDIA_PROFILE_STORAGE.md`.
 - Purpose: Up to 4 images attached to one post.
 - Fields: `id`, `post_id`, `user_id`, `storage_path`, `mime_type`,
   `size_bytes`, `width`, `height`, `position`, `alt_text`, `created_at`.

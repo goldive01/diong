@@ -7,13 +7,9 @@ or video. It does not change any earlier pass's schema, RLS, or RPCs beyond
 the additive column/table additions and the trailing-column RPC
 recreations described below.
 
-**Status: code complete, migration written, migration NOT yet applied to any
-Supabase project.** Nothing in this document should be read as describing a
-live/deployed state — every behaviour below only exists once
-`supabase/migrations/202609130002_media_profile_polish.sql` has been applied.
-Until then, every media control in the app will fail at the database/Storage
-layer (the app code itself is already merged and type-checks/lints/builds
-clean — see the Pass 7 step reports for verification detail).
+**Status: applied.** `supabase/migrations/202609130002_media_profile_polish.sql`
+has been applied to the production Supabase project and verified — every
+behaviour described below is live.
 
 ## Migration to run
 
