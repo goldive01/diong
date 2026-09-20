@@ -748,6 +748,28 @@ export type HabitCheckinRow = {
   note: string | null;
 };
 
+// ---------------------------------------------------------------------------
+// Daily Direction — Pass 9 Step 1 (Action & Focus layer)
+// ---------------------------------------------------------------------------
+
+export type DailyDirectionStatus = "active" | "completed" | "skipped";
+
+export type DailyDirection = {
+  id: number;
+  user_id: string;
+  direction_date: string;
+  intention: string | null;
+  desired_identity: string | null;
+  primary_action: string;
+  why_it_matters: string | null;
+  goal_id: number | null;
+  habit_id: number | null;
+  status: DailyDirectionStatus;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type TableDefinition<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -1063,6 +1085,41 @@ export type Database = {
             | "goal_id"
             | "habit_id"
             | "prime_assignment_id"
+          >
+        >
+      >;
+      daily_directions: TableDefinition<
+        DailyDirection,
+        // Mirrors the column-scoped INSERT grant. id, created_at and
+        // updated_at are owned by defaults/trigger; direction_date is
+        // never client-writable (always the column default, current_date);
+        // status always starts 'active' on create; completed_at is
+        // trigger-derived. goal_id / habit_id are re-validated for
+        // same-owner integrity by enforce_daily_direction_ownership()
+        // regardless of what is sent here.
+        {
+          user_id: string;
+          intention?: string | null;
+          desired_identity?: string | null;
+          primary_action: string;
+          why_it_matters?: string | null;
+          goal_id?: number | null;
+          habit_id?: number | null;
+        },
+        // Mirrors the column-scoped UPDATE grant. user_id, id,
+        // direction_date and the timestamps are not client-writable;
+        // completed_at is applied by apply_direction_completion_status()
+        // whenever status transitions into/out of 'completed'.
+        Partial<
+          Pick<
+            DailyDirection,
+            | "intention"
+            | "desired_identity"
+            | "primary_action"
+            | "why_it_matters"
+            | "goal_id"
+            | "habit_id"
+            | "status"
           >
         >
       >;

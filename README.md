@@ -90,6 +90,12 @@ and makes no guaranteed-outcome claims.
   migration 14 applied.)
 - Privacy Notice and Terms of Use.
 - Branded 404, error boundaries and route-transition loading states.
+- **Daily Direction** — the start of the Action & Focus layer: a private,
+  under-60-second daily prompt (`/direction`) for the one meaningful action
+  that matters most today, with an optional link to a goal and/or a habit.
+  Complements, and is kept distinct from, Daily Prime. One per calendar day;
+  mark complete or skip; a short bounded recent-history list. (Pass 9 Step 1
+  — `docs/DAILY_DIRECTION.md`; migration 16 written, not yet applied.)
 
 ## Tech stack
 
@@ -130,10 +136,12 @@ Both are public by design. Diong never uses the service-role key.
 
 ## Supabase / database
 
-All 15 migrations below are applied, in order, to the current Supabase
-project. Apply migrations in `supabase/migrations/` **in filename order**
-against any other target project — with the Supabase CLI (`supabase db push`)
-or by pasting each file into the SQL Editor once, in order:
+Migrations 1–15 below are applied, in order, to the current Supabase
+project. Migration 16 is **written but not yet applied** — see
+`docs/DAILY_DIRECTION.md`; it is pending manual review. Apply migrations in
+`supabase/migrations/` **in filename order** against any target project —
+with the Supabase CLI (`supabase db push`) or by pasting each file into the
+SQL Editor once, in order:
 
 1. `202607190001_onboarding_and_profiles.sql`
 2. `202607270001_prime_protocol_engine.sql`
@@ -150,9 +158,11 @@ or by pasting each file into the SQL Editor once, in order:
 13. `202609130001_goals_habits_journal.sql`
 14. `202609130002_media_profile_polish.sql` — see `docs/MEDIA_PROFILE_STORAGE.md`.
 15. `202609140001_search_and_profile_read_performance.sql` — see `docs/DATABASE_PERFORMANCE.md`.
+16. `202609150001_daily_direction.sql` — **written, not yet applied to any
+    Supabase project.** See `docs/DAILY_DIRECTION.md`.
 
 Each file is a single transaction and is **not** idempotent — never re-run a
-migration that already succeeded. Migrations 2–15 depend on earlier ones. Row
+migration that already succeeded. Migrations 2–16 depend on earlier ones. Row
 Level Security is enabled on every user-owned table; all writes go through
 column-scoped grants or `SECURITY DEFINER` RPCs.
 
@@ -230,6 +240,7 @@ capabilities).
 - `docs/UX_RELIABILITY_ACCESSIBILITY.md` — loading/error/404 architecture, pending states, accessibility, mobile UX, empty states, safe-error policy
 - `docs/DATABASE_PERFORMANCE.md` — read-path query-flow audit, N+1 findings, indexes, pagination bounds, migration
 - `docs/PRODUCTION_DEPLOYMENT.md` — current, authoritative deployment guide: env vars, Vercel/Supabase setup, security headers, PWA, smoke test, rollback
+- `docs/DAILY_DIRECTION.md` — Daily Direction schema, RLS, lifecycle, date behaviour, Home integration (Pass 9 Step 1)
 - `docs/DAILY_PRIME_HISTORY.md` — Prime reflections / history / progress
 - `docs/DEPLOYMENT.md` — superseded by `docs/PRODUCTION_DEPLOYMENT.md`; kept for history
 - `docs/RELEASE_CHECKLIST.md` — launch checklist

@@ -168,6 +168,35 @@ This document describes the Diong data model. Phase 3 tables are implemented by 
   `focused`, `energised`, `neutral`, `stressed`, `low`, `grateful`,
   `reflective`) or `null`.
 
+## daily_directions (written, not yet applied)
+
+- Implemented by `supabase/migrations/202609150001_daily_direction.sql`
+  (Pass 9 Step 1). **Not yet applied to any Supabase project** — see
+  `docs/DAILY_DIRECTION.md`.
+- Purpose: The user's own chosen focus and one meaningful action for a
+  single calendar day — distinct from Daily Prime (Diong-assigned content).
+- Fields: `id`, `user_id`, `direction_date`, `intention`, `desired_identity`,
+  `primary_action`, `why_it_matters`, `goal_id`, `habit_id`, `status`,
+  `completed_at`, `created_at`, `updated_at`.
+- Relationship to users: `user_id → auth.users` (cascade). `goal_id` /
+  `habit_id` are optional, plain single-column foreign keys
+  (`on delete set null`) to `goals(id)` / `habits(id)`; same-owner integrity
+  for both is enforced by the `enforce_daily_direction_ownership()`
+  `BEFORE INSERT OR UPDATE` trigger (a `42501` error if a linked id belongs
+  to a different user), not by a composite foreign key.
+- Privacy: Strictly owner-only `select`/`insert`/`update`; no `delete`
+  grant — a direction is marked `skipped`, never hard-deleted, matching
+  `goals`/`habits`. Never surfaced in the feed, Discover, global Search, a
+  public profile, communities or messages.
+- Indexes: unique `(user_id, direction_date)` (one row per user per day);
+  `(user_id, direction_date desc)` for the bounded recent-history read.
+- Validation: `primary_action` 1–240 chars (the only required field);
+  `intention` 1–280, `desired_identity` 1–160, `why_it_matters` 1–1000 chars
+  when present; `status` CHECKed against `active`/`completed`/`skipped`.
+  `direction_date` is never client-writable (always the `current_date`
+  column default at insert, immutable after). `completed_at` is
+  system-managed by the `apply_direction_completion_status()` trigger.
+
 ## posts (implemented)
 
 - Implemented by `supabase/migrations/202609100003_social_content.sql` (Social

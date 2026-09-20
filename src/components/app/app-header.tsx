@@ -94,6 +94,7 @@ export function AppHeader({
             className="hidden flex-wrap items-center justify-end gap-2 sm:flex sm:gap-4"
           >
             <NavLink href="/daily-prime">Daily Prime</NavLink>
+            <NavLink href="/direction">Direction</NavLink>
             <details className="group relative">
               <summary className="flex min-h-10 cursor-pointer list-none items-center rounded-full px-3 py-2 text-sm font-semibold text-[#4d574f] hover:bg-white [&::-webkit-details-marker]:hidden">
                 Growth
@@ -151,6 +152,9 @@ export function AppHeader({
           >
             <NavLink href="/daily-prime" className={MOBILE_NAV_LINK_CLASS} onNavigate={closeMenu}>
               Daily Prime
+            </NavLink>
+            <NavLink href="/direction" className={MOBILE_NAV_LINK_CLASS} onNavigate={closeMenu}>
+              Direction
             </NavLink>
             <NavLink href="/goals" className={MOBILE_NAV_LINK_CLASS} onNavigate={closeMenu}>
               Goals

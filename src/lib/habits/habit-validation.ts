@@ -1,5 +1,6 @@
 import type { HabitFrequency } from "@/src/types/database";
 import { isHabitFrequency } from "./habit-vocab";
+import { todayIsoDate } from "@/src/lib/app/date";
 
 // Pure normalisation and validation for the Habits application layer. A
 // usability layer for forms and server actions — it does NOT replace the
@@ -158,10 +159,10 @@ export function parseHabitId(raw: unknown): number | null {
   return Number.isSafeInteger(id) && id > 0 ? id : null;
 }
 
-/** Today's calendar date as "YYYY-MM-DD" (UTC). */
-export function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+/** Today's calendar date as "YYYY-MM-DD" (UTC). Re-exported from
+ * src/lib/app/date.ts — kept here too so every existing import of
+ * todayIsoDate from this module keeps working unchanged. */
+export { todayIsoDate };
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 

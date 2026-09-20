@@ -5,19 +5,22 @@ import { getTopConnectionNudge } from "@/src/lib/connections/connections-data";
 import { HomeConnectionNudge } from "@/src/components/connections/home-connection-nudge";
 import { listGoals } from "@/src/lib/goals/goals-data";
 import { getHabitTodaySummary } from "@/src/lib/habits/habits-data";
-import { todayIsoDate } from "@/src/lib/habits/habit-validation";
+import { todayIsoDate } from "@/src/lib/app/date";
+import { getDirectionForDate } from "@/src/lib/direction/direction-data";
 import { HomeFocusPanel } from "@/src/components/growth/home-focus-panel";
+import { HomeDirectionCard } from "@/src/components/growth/home-direction-card";
 
 const HOME_GOALS_LIMIT = 3;
 
 export default async function HomePage() {
   const { supabase, userId, profile } = await requireCompletedProfile();
   const today = todayIsoDate();
-  const [interestNames, connectionNudge, goals, habitSummary] = await Promise.all([
+  const [interestNames, connectionNudge, goals, habitSummary, direction] = await Promise.all([
     getInterestNames(supabase, userId),
     getTopConnectionNudge(supabase),
     listGoals(supabase, userId),
     getHabitTodaySummary(supabase, userId, today),
+    getDirectionForDate(supabase, userId, today),
   ]);
   const activeGoals = goals
     .filter((goal) => goal.status === "active")
@@ -43,6 +46,10 @@ export default async function HomePage() {
             {interestNames.map((name) => <li key={name} className="rounded-full bg-white px-3 py-1.5 text-sm font-medium">{name}</li>)}
           </ul>
         </aside>
+      </section>
+
+      <section className="mt-6" aria-label="Daily Direction">
+        <HomeDirectionCard direction={direction} />
       </section>
 
       <section className="mt-6" aria-label="Your focus">
